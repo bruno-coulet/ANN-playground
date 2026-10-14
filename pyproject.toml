@@ -1,7 +1,26 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+
 [project]
 name = "ann-playground"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "chardet>=7.6.0",
+    "ipykernel>=7.4.0",
+    "keras>=3.15.1",
+    "matplotlib>=3.11.2",
+    "mlflow>=3.17.1",
+    "numpy>=2.5.4",
+    "pandas>=3.0.6",
+    "plotly>=7.1.0",
+    "scikit-learn>=1.9.1",
+    "seaborn>=0.13.2",
+    "streamlit>=1.65.0",
+    "tensorflow-cpu>=2.21.0",
+    "torch>=2.14.1",
+]
