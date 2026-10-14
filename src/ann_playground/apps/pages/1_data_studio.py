@@ -357,14 +357,14 @@ if st.button("Générer les matrices Train / Test", type="primary"):
 
         # 4. Récupération des noms de colonnes transformées
         if hasattr(transformer, "get_feature_names_out"):
-            encoded_cols: list[str] = [str(c) for c in transformer.get_feature_names_out()]
+            encoded_cols = [str(c) for c in transformer.get_feature_names_out()]
         else:
             encoded_cols = [f"f_{i}" for i in range(X_train_proc.shape[1])]
 
         df_train_features = pd.DataFrame(X_train_proc, columns=encoded_cols)
         df_test_features = pd.DataFrame(X_test_proc, columns=encoded_cols)
 
-        # 5. Exportation via la fonction dédiée
+        # 5. Export unique au format Parquet
         train_path, test_path = export_train_test_parquet(
             X_train=df_train_features,
             X_test=df_test_features,
