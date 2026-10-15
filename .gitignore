@@ -26,3 +26,7 @@ CLAUDE.md
 .github/copilot-instructions.md
 
 presentation/
+
+# MLFlow
+mlflow.db
+mlartifacts/

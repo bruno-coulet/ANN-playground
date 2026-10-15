@@ -13,3 +13,10 @@ mlflow.db
 mlartifacts
 data/processed_data/*
 !data/processed_data/.gitkeep
+.gitignore
+data/
+mlartifacts/
+mlruns/
+notebooks/
+temp/
+tests/.pytest_cache

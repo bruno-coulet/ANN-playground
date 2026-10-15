@@ -1,30 +1,42 @@
-FROM python:3.12-slim
+# ==============================================================================
+# Multi-stage Dockerfile for ANN Playground
+# Optimized with BuildKit cache mounts and explicit wheels
+# ==============================================================================
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/*
+# Stage 1: Build virtual environment
+FROM python:3.12-slim AS builder
 
-# Install uv
+# Install uv from official binary image
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 
 WORKDIR /app
 
-# Enable bytecode compilation and set environment variables
+ENV UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy
+
+# Leverage BuildKit cache for uv download cache
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --frozen --no-install-project --no-dev
+
+# Stage 2: Runtime image
+FROM python:3.12-slim AS runtime
+
+WORKDIR /app
+
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    UV_SYSTEM_PYTHON=1
+    PATH="/app/.venv/bin:$PATH"\
+    PYTHONPATH="/app/src"
 
-# Copy dependency definition files
-COPY pyproject.toml uv.lock ./
 
-# Install project dependencies into system environment without installing the project in editable mode
-RUN uv sync --frozen --no-install-project --no-dev
-ENV PATH="/app/.venv/bin:$PATH"
 
-# Copy project source code
-COPY . .
+# Copy pre-built virtual environment from builder stage
+COPY --from=builder /app/.venv /app/.venv
 
-# Expose Streamlit and MLflow ports
+# Copy project definition and source code
+COPY pyproject.toml ./
+COPY src/ ./src/
+
 EXPOSE 8501 5000
