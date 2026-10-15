@@ -64,10 +64,9 @@ The experiment is based on the [Predict Students' Dropout and Academic Success](
 Clone the repository and install all locked dependencies using `uv`:
 
 ```bash
-git clone [https://github.com/your-username/ANN-playground.git](https://github.com/your-username/ANN-playground.git)
+git clone https://github.com/<YOUR_USERNAME>/ANN-playground.git
 cd ANN-playground
 uv sync
-
 ```
 
 ---
@@ -98,7 +97,6 @@ Start the local MLflow tracking server backed by SQLite:
 
 ```bash
 uv run mlflow server --backend-store-uri sqlite:///mlflow.db --default-artifact-root ./mlartifacts --port 5000
-
 ```
 
 Access the MLflow web UI at [http://localhost:5000](http://localhost:5000) to inspect run parameters, training histories, learning dynamics, and confusion matrix artifacts.
