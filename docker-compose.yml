@@ -1,3 +1,13 @@
+# ==============================================================================
+# File : docker-compose.yml
+# Description : Multi-container orchestration for ANN Playground.
+#               Manages MLflow tracking server and Streamlit interactive UI.
+# ==============================================================================
+
+# Note on MLflow Tracking Server Access (--allowed-hosts):
+# mlflow:5000 : Requêtes envoyées par le conteneur streamlit via le réseau bridge interne de Docker
+# localhost:5000 : Accès à l'interface web MLflow depuis le navigateur de l'hôte
+# 127.0.0.1:5000 : Appels API locaux éventuels depuis le terminal WSL2 ou macOS.
 services:
   mlflow:
     build: .
@@ -8,6 +18,8 @@ services:
       --default-artifact-root /app/mlartifacts
       --host 0.0.0.0
       --port 5000
+      --allowed-hosts "localhost:5000,127.0.0.1:5000,mlflow:5000"
+
     volumes:
       - ./mlflow.db:/app/mlflow.db
       - ./mlartifacts:/app/mlartifacts
@@ -27,6 +39,7 @@ services:
     volumes:
       - ./data:/app/data
       - ./src:/app/src
+      - ./mlartifacts:/app/mlartifacts
     ports:
       - "8501:8501"
     depends_on:

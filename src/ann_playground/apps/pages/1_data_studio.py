@@ -347,7 +347,7 @@ if st.button("Générer les matrices Train / Test", type="primary"):
         y_train = label_enc.fit_transform(y_train_raw.astype(str))
         y_test = label_enc.transform(y_test_raw.astype(str))
 
-        # 3. Fit du ColumnTransformer uniquement sur X_train
+        # # 3. Fit du ColumnTransformer uniquement sur X_train
         X_train_proc, X_test_proc, transformer = preprocess_data(
             X_train=X_train_raw,
             X_test=X_test_raw,
@@ -364,7 +364,7 @@ if st.button("Générer les matrices Train / Test", type="primary"):
         df_train_features = pd.DataFrame(X_train_proc, columns=encoded_cols)
         df_test_features = pd.DataFrame(X_test_proc, columns=encoded_cols)
 
-        # 5. Export unique au format Parquet
+        # # 5. Export unique au format Parquet
         train_path, test_path = export_train_test_parquet(
             X_train=df_train_features,
             X_test=df_test_features,
@@ -373,6 +373,12 @@ if st.button("Générer les matrices Train / Test", type="primary"):
             output_dir=PROCESSED_DATA_DIR,
             target_name="target",
         )
+
+        df_train_ready = df_train_features.copy()
+        df_train_ready["target"] = y_train
+
+        df_test_ready = df_test_features.copy()
+        df_test_ready["target"] = y_test
 
         st.session_state["export_ready"] = True
         st.success(

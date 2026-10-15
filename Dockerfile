@@ -27,7 +27,7 @@ WORKDIR /app
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PATH="/app/.venv/bin:$PATH"\
+    PATH="/app/.venv/bin:$PATH" \
     PYTHONPATH="/app/src"
 
 

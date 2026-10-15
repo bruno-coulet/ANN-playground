@@ -16,7 +16,7 @@ import plotly.graph_objects as go
 from sklearn.metrics import classification_report, confusion_matrix
 import streamlit as st
 
-from ann_playground.config import PROCESSED_DATA_DIR
+from ann_playground.config import PROCESSED_DATA_DIR, EXPERIMENT_NAME
 from ann_playground.models.keras_mlp import StreamlitEpochCallback, build_keras_mlp
 from ann_playground.models.numpy_mlp import NumpyMLP
 from ann_playground.tracker_utils import (
@@ -32,8 +32,13 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-EXPERIMENT_NAME: str = "ANN_Playground"
-_ = init_mlflow_experiment(EXPERIMENT_NAME)
+# Robust experiment initialization
+try:
+    experiment_id = init_mlflow_experiment(EXPERIMENT_NAME)
+except Exception as err:
+    st.warning(f"MLflow service connection unavailable: {err}. Runs will attempt reconnect on launch.")
+    experiment_id = "0"
+
 
 
 @st.cache_data
