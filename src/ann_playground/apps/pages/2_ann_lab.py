@@ -9,14 +9,15 @@ Usage :
 """
 
 from typing import Dict, List, Tuple
+
 import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from sklearn.metrics import classification_report, confusion_matrix
 import streamlit as st
+from sklearn.metrics import classification_report, confusion_matrix
 
-from ann_playground.config import PROCESSED_DATA_DIR, EXPERIMENT_NAME
+from ann_playground.config import EXPERIMENT_NAME, PROCESSED_DATA_DIR
 from ann_playground.models.keras_mlp import StreamlitEpochCallback, build_keras_mlp
 from ann_playground.models.numpy_mlp import NumpyMLP
 from ann_playground.tracker_utils import (
@@ -36,9 +37,10 @@ st.set_page_config(
 try:
     experiment_id = init_mlflow_experiment(EXPERIMENT_NAME)
 except Exception as err:
-    st.warning(f"MLflow service connection unavailable: {err}. Runs will attempt reconnect on launch.")
+    st.warning(
+        f"MLflow service connection unavailable: {err}. Runs will attempt reconnect on launch."
+    )
     experiment_id = "0"
-
 
 
 @st.cache_data
@@ -73,7 +75,9 @@ with st.sidebar:
     cols = st.columns(n_layers)
     for i in range(n_layers):
         default_val = 64 // (2**i) if 64 // (2**i) >= 8 else 8
-        units = cols[i].number_input(f"L{i+1}", min_value=4, max_value=256, value=default_val, step=4)
+        units = cols[i].number_input(
+            f"L{i + 1}", min_value=4, max_value=256, value=default_val, step=4
+        )
         hidden_units.append(int(units))
 
     activation_fn = st.selectbox("Fonction d'activation", ["relu", "tanh", "sigmoid"])
@@ -89,10 +93,16 @@ with st.sidebar:
     else:
         dropout = 0.0
         batch_norm = False
-        st.info("Le moteur NumPy exécute une descente de gradient matricielle avec Softmax.")
+        st.info(
+            "Le moteur NumPy exécute une descente de gradient matricielle avec Softmax."
+        )
 
-    epochs = st.slider("Nombre d'epochs", min_value=10, max_value=300, value=60, step=10)
-    batch_size = st.select_slider("Taille de batch", options=[16, 32, 64, 128, 256], value=32)
+    epochs = st.slider(
+        "Nombre d'epochs", min_value=10, max_value=300, value=60, step=10
+    )
+    batch_size = st.select_slider(
+        "Taille de batch", options=[16, 32, 64, 128, 256], value=32
+    )
 
 
 # ==============================================================================
@@ -100,7 +110,9 @@ with st.sidebar:
 # ==============================================================================
 
 if df_train is None or df_test is None:
-    st.warning("Aucune matrice de données n'a été détectée dans `data/processed_data/`.")
+    st.warning(
+        "Aucune matrice de données n'a été détectée dans `data/processed_data/`."
+    )
     st.info("Exécutez `1_data_studio.py` pour partitionner et prétraiter les données.")
     st.stop()
 
@@ -121,7 +133,11 @@ c3.metric("Échantillons Train", len(X_train))
 c4.metric("Échantillons Test", len(X_test))
 
 tab_train, tab_eval, tab_diagnose = st.tabs(
-    ["1 · Entraînement en direct", "2 · Évaluation & Matrice de confusion", "3 · Diagnostic de généralisation"]
+    [
+        "1 · Entraînement en direct",
+        "2 · Évaluation & Matrice de confusion",
+        "3 · Diagnostic de généralisation",
+    ]
 )
 
 # ------------------------------------------------------------------------------
@@ -210,7 +226,9 @@ with tab_train:
             y_train_oh = np.eye(n_classes)[y_train]
             y_test_oh = np.eye(n_classes)[y_test]
 
-            np_model = NumpyMLP([n_features] + hidden_units + [n_classes], activation=activation_fn)
+            np_model = NumpyMLP(
+                [n_features] + hidden_units + [n_classes], activation=activation_fn
+            )
             records: List[Dict[str, float]] = []
 
             for ep in range(epochs):
@@ -219,33 +237,68 @@ with tab_train:
                 y_shuffled = y_train_oh[indices]
 
                 for b in range(0, len(X_train), batch_size):
-                    xb = X_shuffled[b:b + batch_size]
-                    yb = y_shuffled[b:b + batch_size]
+                    xb = X_shuffled[b : b + batch_size]
+                    yb = y_shuffled[b : b + batch_size]
                     np_model.train_step(xb, yb, lr=learning_rate)
 
                 train_loss, train_acc = np_model.evaluate(X_train, y_train_oh)
                 val_loss, val_acc = np_model.evaluate(X_test, y_test_oh)
 
-                records.append({
-                    "loss": train_loss,
-                    "val_loss": val_loss,
-                    "accuracy": train_acc,
-                    "val_accuracy": val_acc,
-                })
+                records.append(
+                    {
+                        "loss": train_loss,
+                        "val_loss": val_loss,
+                        "accuracy": train_acc,
+                        "val_accuracy": val_acc,
+                    }
+                )
 
                 if (ep + 1) % 5 == 0 or (ep + 1) == epochs:
-                    progress_bar.progress((ep + 1) / epochs, text=f"Epoch {ep + 1}/{epochs}")
+                    progress_bar.progress(
+                        (ep + 1) / epochs, text=f"Epoch {ep + 1}/{epochs}"
+                    )
                     df_h = pd.DataFrame(records)
                     fig = go.Figure()
-                    fig.add_trace(go.Scatter(y=df_h["loss"], name="Train Loss", line=dict(color="#439cc8")))
-                    fig.add_trace(go.Scatter(y=df_h["val_loss"], name="Val Loss", line=dict(color="#f08a5d", dash="dash")))
-                    fig.add_trace(go.Scatter(y=df_h["accuracy"], name="Train Accuracy", yaxis="y2", line=dict(color="#2ca02c")))
-                    fig.add_trace(go.Scatter(y=df_h["val_accuracy"], name="Val Accuracy", yaxis="y2", line=dict(color="#d62728", dash="dash")))
+                    fig.add_trace(
+                        go.Scatter(
+                            y=df_h["loss"],
+                            name="Train Loss",
+                            line=dict(color="#439cc8"),
+                        )
+                    )
+                    fig.add_trace(
+                        go.Scatter(
+                            y=df_h["val_loss"],
+                            name="Val Loss",
+                            line=dict(color="#f08a5d", dash="dash"),
+                        )
+                    )
+                    fig.add_trace(
+                        go.Scatter(
+                            y=df_h["accuracy"],
+                            name="Train Accuracy",
+                            yaxis="y2",
+                            line=dict(color="#2ca02c"),
+                        )
+                    )
+                    fig.add_trace(
+                        go.Scatter(
+                            y=df_h["val_accuracy"],
+                            name="Val Accuracy",
+                            yaxis="y2",
+                            line=dict(color="#d62728", dash="dash"),
+                        )
+                    )
                     fig.update_layout(
                         title="Courbes d'apprentissage NumPy",
                         xaxis=dict(title="Epoch"),
                         yaxis=dict(title="Loss", rangemode="tozero"),
-                        yaxis2=dict(title="Accuracy", overlaying="y", side="right", range=[0.0, 1.0]),
+                        yaxis2=dict(
+                            title="Accuracy",
+                            overlaying="y",
+                            side="right",
+                            range=[0.0, 1.0],
+                        ),
                         height=400,
                     )
                     chart_spot.plotly_chart(fig, use_container_width=True)
@@ -294,14 +347,38 @@ with tab_train:
     if "history_df" in st.session_state and not launch_btn:
         df_h = st.session_state["history_df"]
         fig = go.Figure()
-        fig.add_trace(go.Scatter(y=df_h["loss"], name="Train Loss", line=dict(color="#439cc8")))
-        fig.add_trace(go.Scatter(y=df_h["val_loss"], name="Val Loss", line=dict(color="#f08a5d", dash="dash")))
-        fig.add_trace(go.Scatter(y=df_h["accuracy"], name="Train Accuracy", yaxis="y2", line=dict(color="#2ca02c")))
-        fig.add_trace(go.Scatter(y=df_h["val_accuracy"], name="Val Accuracy", yaxis="y2", line=dict(color="#d62728", dash="dash")))
+        fig.add_trace(
+            go.Scatter(y=df_h["loss"], name="Train Loss", line=dict(color="#439cc8"))
+        )
+        fig.add_trace(
+            go.Scatter(
+                y=df_h["val_loss"],
+                name="Val Loss",
+                line=dict(color="#f08a5d", dash="dash"),
+            )
+        )
+        fig.add_trace(
+            go.Scatter(
+                y=df_h["accuracy"],
+                name="Train Accuracy",
+                yaxis="y2",
+                line=dict(color="#2ca02c"),
+            )
+        )
+        fig.add_trace(
+            go.Scatter(
+                y=df_h["val_accuracy"],
+                name="Val Accuracy",
+                yaxis="y2",
+                line=dict(color="#d62728", dash="dash"),
+            )
+        )
         fig.update_layout(
             xaxis=dict(title="Epoch"),
             yaxis=dict(title="Loss", rangemode="tozero"),
-            yaxis2=dict(title="Accuracy", overlaying="y", side="right", range=[0.0, 1.0]),
+            yaxis2=dict(
+                title="Accuracy", overlaying="y", side="right", range=[0.0, 1.0]
+            ),
             height=400,
         )
         chart_spot.plotly_chart(fig, use_container_width=True)
@@ -323,7 +400,9 @@ with tab_eval:
 
         with col_rep:
             st.markdown("##### Rapport de classification")
-            report_dict = classification_report(y_test, y_pred, target_names=class_labels, output_dict=True)
+            report_dict = classification_report(
+                y_test, y_pred, target_names=class_labels, output_dict=True
+            )
             df_report = pd.DataFrame(report_dict).transpose().round(3)
             st.dataframe(df_report, use_container_width=True)
 

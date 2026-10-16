@@ -22,12 +22,12 @@ Functions :
 """
 
 from typing import Any
+
 import numpy as np
 import pandas as pd
+from sklearn.base import BaseEstimator, clone
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder, RobustScaler
-from sklearn.base import BaseEstimator, clone
-
 
 
 def missing_summary(df: pd.DataFrame) -> pd.DataFrame:
@@ -53,9 +53,7 @@ def missing_summary(df: pd.DataFrame) -> pd.DataFrame:
     ).sort_values(by="missing_count", ascending=False)
 
 
-def special_columns(
-    df: pd.DataFrame, max_modalities: int = 20
-) -> dict[str, list[str]]:
+def special_columns(df: pd.DataFrame, max_modalities: int = 20) -> dict[str, list[str]]:
     """
     Identifie et catégorise les colonnes d'un DataFrame selon leurs spécificités structurelles.
 
@@ -85,7 +83,7 @@ def special_columns(
         "boolean": [
             col
             for col in df.columns
-            if set(df[col].dropna().unique()).issubset({True, False, 1, 0})
+            if set(df[col].dropna().unique()).issubset({True, False})
         ],
     }
 
@@ -105,6 +103,7 @@ def empty_columns(df: pd.DataFrame) -> list[str]:
         Liste des noms des colonnes entièrement vides.
     """
     return df.columns[df.isna().all()].tolist()
+
 
 def missing_like_columns(df: pd.DataFrame) -> list[str]:
     """
@@ -244,7 +243,9 @@ def convert_bool_to_uint8(
             if keep_na:
                 df_out[col] = df_out[col].astype("boolean").astype("UInt8")
             else:
-                df_out[col] = df_out[col].astype("boolean").fillna(False).astype("UInt8")
+                df_out[col] = (
+                    df_out[col].astype("boolean").fillna(False).astype("UInt8")
+                )
     return df_out
 
 
@@ -266,9 +267,7 @@ def lower_columns(df: pd.DataFrame, cols: list[str]) -> pd.DataFrame:
     """
     df_out = df.copy()
     existing_cols = [c for c in cols if c in df_out.columns]
-    string_cols = [
-        c for c in existing_cols if pd.api.types.is_string_dtype(df_out[c])
-    ]
+    string_cols = [c for c in existing_cols if pd.api.types.is_string_dtype(df_out[c])]
     for col in string_cols:
         df_out[col] = df_out[col].str.lower()
     return df_out
@@ -429,8 +428,12 @@ def export_train_test_feather(
     X_te = X_test.drop(columns=drop_cols or [], errors="ignore").reset_index(drop=True)
 
     if transform_y == "log1p":
-        y_tr = pd.Series(np.log1p(y_train.values), name=target_name).reset_index(drop=True)
-        y_te = pd.Series(np.log1p(y_test.values), name=target_name).reset_index(drop=True)
+        y_tr = pd.Series(np.log1p(y_train.values), name=target_name).reset_index(
+            drop=True
+        )
+        y_te = pd.Series(np.log1p(y_test.values), name=target_name).reset_index(
+            drop=True
+        )
     else:
         y_tr = pd.Series(y_train.values, name=target_name).reset_index(drop=True)
         y_te = pd.Series(y_test.values, name=target_name).reset_index(drop=True)
@@ -481,9 +484,9 @@ def preprocess_data(
         numeric_columns = X_train.select_dtypes(include=[np.number]).columns.tolist()
 
     if categorical_columns is None:
-        categorical_columns = (
-            X_train.select_dtypes(include=["object", "category", "string"]).columns.tolist()
-        )
+        categorical_columns = X_train.select_dtypes(
+            include=["object", "category", "string"]
+        ).columns.tolist()
 
     transformers = []
     if numeric_columns:
@@ -492,18 +495,24 @@ def preprocess_data(
         transformers.append(
             (
                 "cat",
-                OneHotEncoder(drop="first", handle_unknown="ignore", sparse_output=False),
+                OneHotEncoder(
+                    drop="first", handle_unknown="ignore", sparse_output=False
+                ),
                 categorical_columns,
             )
         )
 
     if not transformers:
-        raise ValueError("Aucune colonne numérique ou catégorielle valide trouvée pour la transformation.")
+        raise ValueError(
+            "Aucune colonne numérique ou catégorielle valide trouvée pour la transformation."
+        )
 
     column_transformer = ColumnTransformer(transformers=transformers, remainder="drop")
 
     # Fit uniquement sur X_train pour respecter l'étanchéité des données
     X_train_processed = column_transformer.fit_transform(X_train)
-    X_test_processed = column_transformer.transform(X_test) if X_test is not None else None
+    X_test_processed = (
+        column_transformer.transform(X_test) if X_test is not None else None
+    )
 
     return X_train_processed, X_test_processed, column_transformer

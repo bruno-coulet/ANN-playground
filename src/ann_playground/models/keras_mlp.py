@@ -11,16 +11,19 @@ Functions :
 """
 
 from typing import Any, List
+
 import keras
-from keras import layers, models, optimizers
 import pandas as pd
 import plotly.graph_objects as go
+from keras import layers, models, optimizers
 
 
 class StreamlitEpochCallback(keras.callbacks.Callback):
     """Callback to stream training progress directly to Streamlit placeholders."""
 
-    def __init__(self, total_epochs: int, chart_placeholder: Any, progress_bar: Any) -> None:
+    def __init__(
+        self, total_epochs: int, chart_placeholder: Any, progress_bar: Any
+    ) -> None:
         """Initialize the callback tracker.
 
         Args:
@@ -39,31 +42,69 @@ class StreamlitEpochCallback(keras.callbacks.Callback):
         if logs is None:
             return
 
-        self.history_records.append({
-            "epoch": epoch + 1,
-            "loss": logs.get("loss", 0.0),
-            "val_loss": logs.get("val_loss", 0.0),
-            "accuracy": logs.get("accuracy", 0.0),
-            "val_accuracy": logs.get("val_accuracy", 0.0),
-        })
+        self.history_records.append(
+            {
+                "epoch": epoch + 1,
+                "loss": logs.get("loss", 0.0),
+                "val_loss": logs.get("val_loss", 0.0),
+                "accuracy": logs.get("accuracy", 0.0),
+                "val_accuracy": logs.get("val_accuracy", 0.0),
+            }
+        )
 
         progress = (epoch + 1) / self.total_epochs
-        self.progress_bar.progress(progress, text=f"Training: Epoch {epoch + 1}/{self.total_epochs}")
+        self.progress_bar.progress(
+            progress, text=f"Training: Epoch {epoch + 1}/{self.total_epochs}"
+        )
 
         if (epoch + 1) % 2 == 0 or (epoch + 1) == self.total_epochs:
             df_hist = pd.DataFrame(self.history_records)
             fig = go.Figure()
-            fig.add_trace(go.Scatter(x=df_hist["epoch"], y=df_hist["loss"], name="Train Loss", line=dict(color="#439cc8")))
-            fig.add_trace(go.Scatter(x=df_hist["epoch"], y=df_hist["val_loss"], name="Val Loss", line=dict(color="#f08a5d", dash="dash")))
-            fig.add_trace(go.Scatter(x=df_hist["epoch"], y=df_hist["accuracy"], name="Train Accuracy", yaxis="y2", line=dict(color="#2ca02c")))
-            fig.add_trace(go.Scatter(x=df_hist["epoch"], y=df_hist["val_accuracy"], name="Val Accuracy", yaxis="y2", line=dict(color="#d62728", dash="dash")))
+            fig.add_trace(
+                go.Scatter(
+                    x=df_hist["epoch"],
+                    y=df_hist["loss"],
+                    name="Train Loss",
+                    line=dict(color="#439cc8"),
+                )
+            )
+            fig.add_trace(
+                go.Scatter(
+                    x=df_hist["epoch"],
+                    y=df_hist["val_loss"],
+                    name="Val Loss",
+                    line=dict(color="#f08a5d", dash="dash"),
+                )
+            )
+            fig.add_trace(
+                go.Scatter(
+                    x=df_hist["epoch"],
+                    y=df_hist["accuracy"],
+                    name="Train Accuracy",
+                    yaxis="y2",
+                    line=dict(color="#2ca02c"),
+                )
+            )
+            fig.add_trace(
+                go.Scatter(
+                    x=df_hist["epoch"],
+                    y=df_hist["val_accuracy"],
+                    name="Val Accuracy",
+                    yaxis="y2",
+                    line=dict(color="#d62728", dash="dash"),
+                )
+            )
 
             fig.update_layout(
                 title="Learning Dynamics (Keras)",
                 xaxis=dict(title="Epoch"),
                 yaxis=dict(title="Loss", rangemode="tozero"),
-                yaxis2=dict(title="Accuracy", overlaying="y", side="right", range=[0.0, 1.0]),
-                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+                yaxis2=dict(
+                    title="Accuracy", overlaying="y", side="right", range=[0.0, 1.0]
+                ),
+                legend=dict(
+                    orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1
+                ),
                 height=400,
                 margin=dict(l=20, r=20, t=50, b=20),
             )

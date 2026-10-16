@@ -6,21 +6,20 @@ Description : Interface Streamlit agnostique pour le diagnostic de données, l'E
 
 from pathlib import Path
 from typing import Any
+
 import numpy as np
 import pandas as pd
 import plotly.express as px
-import plotly.graph_objects as go
+import streamlit as st
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
-import streamlit as st
 
 from ann_playground.cleaning_utils import (
     count_duplicates,
-    drop_columns,
+    export_train_test_parquet,
     missing_summary,
     preprocess_data,
     special_columns,
-    export_train_test_parquet,
 )
 from ann_playground.config import DATA, PROCESSED_DATA_DIR
 from ann_playground.eda_utils import (
@@ -28,9 +27,6 @@ from ann_playground.eda_utils import (
     drop_redundant_features,
     target_correlations,
 )
-
-
-
 
 st.set_page_config(
     page_title="Data Studio · EDA & Data Prep",
@@ -47,13 +43,17 @@ def load_source_data(file_path: Path | Any) -> pd.DataFrame:
         path = Path(file_path)
         if not path.exists():
             raise FileNotFoundError(f"Fichier introuvable : {path}")
-        df = pd.read_csv(path, sep=None, engine="python") if path.suffix == ".csv" else pd.read_parquet(path)
+        df = (
+            pd.read_csv(path, sep=None, engine="python")
+            if path.suffix == ".csv"
+            else pd.read_parquet(path)
+        )
     else:
         name = file_path.name
         if name.endswith(".csv"):
             df = pd.read_csv(file_path, sep=None, engine="python")
         elif name.endswith(".parquet"):
-            df = pd.read_parquet(file_file)
+            df = pd.read_parquet(file_path)
         else:
             raise ValueError("Format non supporté (CSV ou Parquet requis).")
 
@@ -76,7 +76,7 @@ def classify_feature_types(
         n_unique = series.nunique()
         unique_vals = set(series.unique())
 
-        if unique_vals.issubset({0, 1, True, False}) and n_unique <= 2:
+        if unique_vals.issubset({0, 1}) and n_unique <= 2:
             binary_cols.append(col)
         elif pd.api.types.is_numeric_dtype(series):
             if n_unique <= cardinality_threshold:
@@ -123,7 +123,9 @@ with st.sidebar:
             st.stop()
 
     column_candidates = ["Aucune"] + list(df_raw.columns)
-    selected_target = st.selectbox("Variable cible (Target)", column_candidates, index=len(column_candidates) - 1)
+    selected_target = st.selectbox(
+        "Variable cible (Target)", column_candidates, index=len(column_candidates) - 1
+    )
     target_name = None if selected_target == "Aucune" else selected_target
 
 
@@ -159,9 +161,18 @@ with tab_audit:
 
     st.markdown("#### Typage statistique réel inféré")
     t1, t2, t3 = st.columns(3)
-    t1.info(f"**Quantitatives réelles ({len(typed_features['continuous'])})**\n\n" + ", ".join(typed_features["continuous"]))
-    t2.warning(f"**Catégorielles / Codes entiers ({len(typed_features['categorical'])})**\n\n" + ", ".join(typed_features["categorical"]))
-    t3.success(f"**Binaires / Drapeaux ({len(typed_features['binary'])})**\n\n" + ", ".join(typed_features["binary"]))
+    t1.info(
+        f"**Quantitatives réelles ({len(typed_features['continuous'])})**\n\n"
+        + ", ".join(typed_features["continuous"])
+    )
+    t2.warning(
+        f"**Catégorielles / Codes entiers ({len(typed_features['categorical'])})**\n\n"
+        + ", ".join(typed_features["categorical"])
+    )
+    t3.success(
+        f"**Binaires / Drapeaux ({len(typed_features['binary'])})**\n\n"
+        + ", ".join(typed_features["binary"])
+    )
 
     st.markdown("#### Bilan des valeurs manquantes")
     df_missing = missing_summary(df_raw)
@@ -194,7 +205,11 @@ with tab_eda:
                 x=var_to_plot,
                 nbins=35,
                 marginal="box",
-                color=target_name if target_name and df_raw[target_name].nunique() <= 10 else None,
+                color=(
+                    target_name
+                    if target_name and df_raw[target_name].nunique() <= 10
+                    else None
+                ),
                 color_discrete_sequence=px.colors.qualitative.Prism,
             )
             st.plotly_chart(fig_dist, use_container_width=True)
@@ -215,7 +230,9 @@ with tab_eda:
             target_series = df_raw[target_name]
             target_dist = target_series.value_counts(dropna=False).reset_index()
             target_dist.columns = [target_name, "Effectif"]
-            target_dist["Proportion (%)"] = (target_dist["Effectif"] / len(df_raw) * 100).round(2)
+            target_dist["Proportion (%)"] = (
+                target_dist["Effectif"] / len(df_raw) * 100
+            ).round(2)
 
             fig_target = px.pie(
                 target_dist,
@@ -227,7 +244,9 @@ with tab_eda:
             st.plotly_chart(fig_target, use_container_width=True)
             st.dataframe(target_dist, use_container_width=True)
         else:
-            st.info("Définissez une cible dans la barre latérale pour activer la répartition.")
+            st.info(
+                "Définissez une cible dans la barre latérale pour activer la répartition."
+            )
 
 
 # ------------------------------------------------------------------------------
@@ -250,9 +269,13 @@ with tab_filter:
     col_corr1, col_corr2 = st.columns([1, 1])
 
     with col_corr1:
-        st.markdown(f"**Paires redondantes identifiées (|r| > {corr_threshold}) :** {len(pairs)}")
+        st.markdown(
+            f"**Paires redondantes identifiées (|r| > {corr_threshold}) :** {len(pairs)}"
+        )
         if pairs:
-            df_pairs = pd.DataFrame(pairs, columns=["Feature 1", "Feature 2", "Corrélation"])
+            df_pairs = pd.DataFrame(
+                pairs, columns=["Feature 1", "Feature 2", "Corrélation"]
+            )
             st.dataframe(
                 df_pairs.style.format({"Corrélation": "{:.3f}"}),
                 use_container_width=True,
@@ -273,8 +296,12 @@ with tab_filter:
             else:
                 y_temp = df_raw[target_name]
 
-            corrs = target_correlations(df_raw.drop(columns=[target_name]), y_temp, n_top=12)
-            st.dataframe(corrs.to_frame("Corrélation absolue"), use_container_width=True)
+            corrs = target_correlations(
+                df_raw.drop(columns=[target_name]), y_temp, n_top=12
+            )
+            st.dataframe(
+                corrs.to_frame("Corrélation absolue"), use_container_width=True
+            )
 
             if st.button("Éliminer automatiquement les variables redondantes"):
                 filtered_df, dropped_cols = drop_redundant_features(
@@ -282,7 +309,9 @@ with tab_filter:
                 )
                 st.session_state["df_filtered"] = filtered_df
                 st.session_state["dropped_features"] = dropped_cols
-                st.warning(f"Variables écartées ({len(dropped_cols)}) : {', '.join(dropped_cols)}")
+                st.warning(
+                    f"Variables écartées ({len(dropped_cols)}) : {', '.join(dropped_cols)}"
+                )
 
     # Matrice de corrélation
     if len(numeric_df.columns) > 1:
@@ -307,10 +336,14 @@ with tab_prep:
     df_current = st.session_state.get("df_filtered", df_raw.copy())
 
     if target_name is None:
-        st.error("Une variable cible valide doit être sélectionnée dans la barre latérale pour segmenter le jeu de données.")
+        st.error(
+            "Une variable cible valide doit être sélectionnée dans la barre latérale pour segmenter le jeu de données."
+        )
         st.stop()
 
-    st.write(f"Dimensions actuelles : `{df_current.shape[0]}` lignes, `{df_current.shape[1]}` colonnes.")
+    st.write(
+        f"Dimensions actuelles : `{df_current.shape[0]}` lignes, `{df_current.shape[1]}` colonnes."
+    )
 
     col_p1, col_p2, col_p3 = st.columns(3)
     test_ratio = col_p1.slider("Proportion du jeu de test", 0.10, 0.40, 0.20, 0.05)
@@ -323,68 +356,78 @@ with tab_prep:
     cat_features = types_ready["categorical"]
 
     # Option manuelle pour surcharger les sélections de type
-    with st.expander("Ajustement manuel des affectations de colonnes pour le preprocessing"):
-        num_features = st.multiselect("Variables à standardiser (numériques)", df_current.columns, default=num_features)
-        cat_features = st.multiselect("Variables à encoder en One-Hot (catégorielles)", df_current.columns, default=cat_features)
+    with st.expander(
+        "Ajustement manuel des affectations de colonnes pour le preprocessing"
+    ):
+        num_features = st.multiselect(
+            "Variables à standardiser (numériques)",
+            df_current.columns,
+            default=num_features,
+        )
+        cat_features = st.multiselect(
+            "Variables à encoder en One-Hot (catégorielles)",
+            df_current.columns,
+            default=cat_features,
+        )
 
 if st.button("Générer les matrices Train / Test", type="primary"):
-        X_df = df_current.drop(columns=[target_name])
-        y_raw = df_current[target_name]
+    X_df = df_current.drop(columns=[target_name])
+    y_raw = df_current[target_name]
 
-        strat_target = y_raw if use_stratify and y_raw.nunique() <= 20 else None
+    strat_target = y_raw if use_stratify and y_raw.nunique() <= 20 else None
 
-        # 1. Découpage train/test AVANT toute transformation
-        X_train_raw, X_test_raw, y_train_raw, y_test_raw = train_test_split(
-            X_df,
-            y_raw,
-            test_size=test_ratio,
-            random_state=int(random_seed),
-            stratify=strat_target,
-        )
+    # 1. Découpage train/test AVANT toute transformation
+    X_train_raw, X_test_raw, y_train_raw, y_test_raw = train_test_split(
+        X_df,
+        y_raw,
+        test_size=test_ratio,
+        random_state=int(random_seed),
+        stratify=strat_target,
+    )
 
-        # 2. Encodage de la target
-        label_enc = LabelEncoder()
-        y_train = label_enc.fit_transform(y_train_raw.astype(str))
-        y_test = label_enc.transform(y_test_raw.astype(str))
+    # 2. Encodage de la target
+    label_enc = LabelEncoder()
+    y_train = label_enc.fit_transform(y_train_raw.astype(str))
+    y_test = label_enc.transform(y_test_raw.astype(str))
 
-        # # 3. Fit du ColumnTransformer uniquement sur X_train
-        X_train_proc, X_test_proc, transformer = preprocess_data(
-            X_train=X_train_raw,
-            X_test=X_test_raw,
-            numeric_columns=num_features,
-            categorical_columns=cat_features,
-        )
+    # # 3. Fit du ColumnTransformer uniquement sur X_train
+    X_train_proc, X_test_proc, transformer = preprocess_data(
+        X_train=X_train_raw,
+        X_test=X_test_raw,
+        numeric_columns=num_features,
+        categorical_columns=cat_features,
+    )
 
-        # 4. Récupération des noms de colonnes transformées
-        if hasattr(transformer, "get_feature_names_out"):
-            encoded_cols = [str(c) for c in transformer.get_feature_names_out()]
-        else:
-            encoded_cols = [f"f_{i}" for i in range(X_train_proc.shape[1])]
+    # 4. Récupération des noms de colonnes transformées
+    if hasattr(transformer, "get_feature_names_out"):
+        encoded_cols = [str(c) for c in transformer.get_feature_names_out()]
+    else:
+        encoded_cols = [f"f_{i}" for i in range(X_train_proc.shape[1])]
 
-        df_train_features = pd.DataFrame(X_train_proc, columns=encoded_cols)
-        df_test_features = pd.DataFrame(X_test_proc, columns=encoded_cols)
+    df_train_features = pd.DataFrame(X_train_proc, columns=encoded_cols)
+    df_test_features = pd.DataFrame(X_test_proc, columns=encoded_cols)
 
-        # # 5. Export unique au format Parquet
-        train_path, test_path = export_train_test_parquet(
-            X_train=df_train_features,
-            X_test=df_test_features,
-            y_train=y_train,
-            y_test=y_test,
-            output_dir=PROCESSED_DATA_DIR,
-            target_name="target",
-        )
+    # # 5. Export unique au format Parquet
+    train_path, test_path = export_train_test_parquet(
+        X_train=df_train_features,
+        X_test=df_test_features,
+        y_train=y_train,
+        y_test=y_test,
+        output_dir=PROCESSED_DATA_DIR,
+        target_name="target",
+    )
 
-        df_train_ready = df_train_features.copy()
-        df_train_ready["target"] = y_train
+    df_train_ready = df_train_features.copy()
+    df_train_ready["target"] = y_train
 
-        df_test_ready = df_test_features.copy()
-        df_test_ready["target"] = y_test
+    df_test_ready = df_test_features.copy()
+    df_test_ready["target"] = y_test
 
-        st.session_state["export_ready"] = True
-        st.success(
-            f"Matrices exportées avec succès dans `{PROCESSED_DATA_DIR}`\n\n"
-            f"- Train set : `{df_train_features.shape[0]}` lignes, `{len(encoded_cols)}` features\n"
-            f"- Test set  : `{df_test_features.shape[0]}` lignes\n"
-            f"- Classes cibles : {dict(enumerate(label_enc.classes_))}"
-        )
-        st.dataframe(df_train_features.head(5), use_container_width=True)
+    st.session_state["export_ready"] = True
+    st.success(
+        f"Matrices exportées avec succès dans `{PROCESSED_DATA_DIR}`\n\n"
+        f"- Train set : `{df_train_features.shape[0]}` lignes, `{len(encoded_cols)}` features\n"
+        f"- Test set  : `{df_test_features.shape[0]}` lignes\n"
+        f"- Classes cibles : {dict(enumerate(label_enc.classes_))}"
+    )
+    st.dataframe(df_train_features.head(5), use_container_width=True)
