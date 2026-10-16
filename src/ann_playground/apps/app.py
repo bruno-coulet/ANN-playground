@@ -7,7 +7,6 @@ Usage :
     uv run streamlit run src/ann_playground/apps/app.py
 """
 
-from pathlib import Path
 import streamlit as st
 
 from ann_playground.config import DATA, PROCESSED_DATA_DIR

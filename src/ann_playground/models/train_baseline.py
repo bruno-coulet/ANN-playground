@@ -6,9 +6,10 @@ sur des données synthétiques.
 
 from pathlib import Path
 from typing import Final
+
 import keras
-from keras import layers
 import numpy as np
+from keras import layers
 
 # Constantes du modèle
 INPUT_DIM: Final[int] = 8
@@ -43,7 +44,9 @@ def run_pipeline() -> None:
     """Génère un jeu synthétique, entraîne le réseau et sauvegarde l'artefact."""
     # Données synthétiques pour test
     x_train: np.ndarray = np.random.randn(200, INPUT_DIM).astype(np.float32)
-    y_train: np.ndarray = np.random.randint(0, NUM_CLASSES, size=(200,)).astype(np.int64)
+    y_train: np.ndarray = np.random.randint(0, NUM_CLASSES, size=(200,)).astype(
+        np.int64
+    )
 
     model: keras.Model = build_mlp_classifier(
         input_dim=INPUT_DIM, num_classes=NUM_CLASSES

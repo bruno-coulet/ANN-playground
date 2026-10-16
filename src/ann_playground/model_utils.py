@@ -9,6 +9,7 @@ Functions :
 """
 
 from typing import Any
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -23,7 +24,6 @@ from sklearn.metrics import (
 )
 from sklearn.model_selection import GridSearchCV, RandomizedSearchCV, cross_val_score
 from sklearn.preprocessing import LabelEncoder
-from sklearn.base import BaseEstimator, ClassifierMixin
 
 
 def evaluate_regression(
@@ -73,7 +73,9 @@ def evaluate_regression(
         best_model = algo
         best_model.fit(X_train, y_train)
         best_params = algo.get_params()
-        cv_results = cross_val_score(best_model, X_train, y_train, cv=cv, scoring=scoring)
+        cv_results = cross_val_score(
+            best_model, X_train, y_train, cv=cv, scoring=scoring
+        )
     else:
         if search_type == "grid":
             search = GridSearchCV(algo, param_grid, cv=cv, scoring=scoring, n_jobs=-1)
@@ -183,7 +185,11 @@ def evaluate_classification(
             search = GridSearchCV(algo, param_grid=param_grid, cv=cv, scoring=scoring)
         elif search_type == "random":
             search = RandomizedSearchCV(
-                algo, param_distributions=param_grid, cv=cv, scoring=scoring, random_state=42
+                algo,
+                param_distributions=param_grid,
+                cv=cv,
+                scoring=scoring,
+                random_state=42,
             )
         else:
             raise ValueError("search_type doit être 'grid' ou 'random'.")
