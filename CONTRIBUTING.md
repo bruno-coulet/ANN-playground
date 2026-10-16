@@ -1,11 +1,11 @@
-### Contributing to ANN Playground
+# Contributing to ANN Playground
 Thank you for contributing to ANN Playground.
 
 This document describes the development workflow, coding standards, testing requirements, and Git process used in this repository.
 
 ---
 
-### Development Workflow
+# Development Workflow
 All development must be done from feature branches based on develop.
 
 Never work directly on main.
@@ -31,7 +31,7 @@ git checkout -b feature/my-new-feature
 
 ---
 
-### Installing the Project
+# Installing the Project
 
 Clone the repository:
 
@@ -44,14 +44,14 @@ uv sync --all-groups
 
 ---
 
-### Running the Application
+# Running the Application
 Launch Streamlit:
 
 uv run streamlit run src/ann_playground/apps/app.py
 
 ---
 
-### Running Tests
+# Running Tests
 
 Run all tests:
 
@@ -64,7 +64,7 @@ uv run pytest \
 
 ---
 
-### Linting
+# Linting
 
 Check code quality:
 
@@ -75,7 +75,7 @@ uv run ruff format --check .
 
 ---
 
-### Before Every Commit
+# Before Every Commit
 
 Always run:
 
@@ -91,7 +91,7 @@ uv run pre-commit run --all-files
 
 ---
 
-### Pull Requests
+# Pull Requests
 Before opening a Pull Request:
 
     * tests must pass
@@ -119,7 +119,7 @@ develop
 
 ---
 
-### Coding Standards
+# Coding Standards
 
     * Python 3.12+
     * Ruff for linting
@@ -129,7 +129,7 @@ develop
 
 ---
 
-### Test Structure
+# Test Structure
 
 tests/
 
@@ -153,7 +153,7 @@ Smoke tests:
 
 ---
 
-### Coverage Policy
+# Coverage Policy
 
 Current coverage target:
 
@@ -165,7 +165,7 @@ Coverage regressions should be avoided.
 
 ---
 
-### Branch Protection
+# Branch Protection
 
 The main branch is protected.
 
