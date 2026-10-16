@@ -6,14 +6,16 @@ on:
       - main
       - develop
 
+  pull_request:
+    branches:
+      - main
+      - develop
+
 jobs:
-
   docker-build:
-
     runs-on: ubuntu-latest
 
     steps:
-
       - uses: actions/checkout@v4
 
       - name: Build
