@@ -1,7 +1,6 @@
 name: CI
 
 on:
-
   push:
     branches:
       - main
@@ -13,16 +12,15 @@ on:
       - develop
 
 jobs:
-
   test:
-
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - uses: actions/checkout@v4
-
-      - uses: astral-sh/setup-uv@v3
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v3
 
       - name: Install dependencies
         run: uv sync --all-groups
@@ -30,11 +28,12 @@ jobs:
       - name: Ruff
         run: uv run ruff check .
 
-      - name: Black
-        run: uv run black --check .
+      - name: Ruff Format
+        run: uv run ruff format --check .
 
-      - name: Tests
+      - name: Tests + Coverage
         run: |
           uv run pytest \
-          --cov=src \
-          --cov-report=term \
+            --cov=src \
+            --cov-report=term-missing \
+            --cov-fail-under=15
