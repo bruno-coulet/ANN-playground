@@ -1,8 +1,11 @@
+from unittest.mock import MagicMock, patch
+
 import keras
 import numpy as np
 
 from ann_playground.models.train_baseline import (
     build_mlp_classifier,
+    run_pipeline,
 )
 
 
@@ -23,14 +26,35 @@ def test_baseline_predict():
         num_classes=2,
     )
 
-    X = np.random.rand(
+    x = np.random.rand(
         5,
         8,
     )
 
-    pred = model.predict(
-        X,
+    predictions = model.predict(
+        x,
         verbose=0,
     )
 
-    assert pred.shape == (5, 2)
+    assert predictions.shape == (5, 2)
+
+
+@patch("ann_playground.models.train_baseline.ARTIFACTS_DIR")
+@patch("ann_playground.models.train_baseline.build_mlp_classifier")
+def test_run_pipeline(
+    mock_build_model,
+    mock_artifacts_dir,
+):
+    mock_model = MagicMock()
+
+    mock_build_model.return_value = mock_model
+
+    run_pipeline()
+
+    mock_model.summary.assert_called_once()
+
+    mock_model.fit.assert_called_once()
+
+    mock_model.save.assert_called_once()
+
+    mock_artifacts_dir.mkdir.assert_called_once()
