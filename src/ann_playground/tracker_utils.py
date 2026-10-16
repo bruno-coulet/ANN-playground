@@ -10,8 +10,9 @@ Functions :
     - log_numpy_training(run_name, params, history, metrics_test, fig_cm) -> None
 """
 
-from typing import Any, Dict, List, Optional
 import os
+from typing import Any, Dict, List, Optional
+
 import mlflow
 import mlflow.keras
 from mlflow.entities import Experiment
@@ -57,7 +58,9 @@ def init_mlflow_experiment(
     client: MlflowClient = MlflowClient(tracking_uri=uri)
 
     try:
-        experiment: Optional[Experiment] = client.get_experiment_by_name(experiment_name)
+        experiment: Optional[Experiment] = client.get_experiment_by_name(
+            experiment_name
+        )
     except MlflowException:
         experiment = None
 

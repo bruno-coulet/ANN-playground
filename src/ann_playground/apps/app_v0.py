@@ -5,6 +5,7 @@ Description : Streamlit modular and rusable  Interface
 """
 
 from typing import List, Tuple
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -43,9 +44,11 @@ def load_dataset(file) -> pd.DataFrame:
 def detect_types(df: pd.DataFrame) -> Tuple[List[str], List[str], List[str]]:
     """Détecte les types statistiques usuels."""
     num_cols = df.select_dtypes(include=[np.number]).columns.tolist()
-    cat_cols = df.select_dtypes(include=["object", "string", "category"]).columns.tolist()
+    cat_cols = df.select_dtypes(
+        include=["object", "string", "category"]
+    ).columns.tolist()
     bin_cols = [
-        col for col in df.columns if set(df[col].dropna().unique()).issubset({0, 1, True, False})
+        col for col in df.columns if set(df[col].dropna().unique()).issubset({0, 1})
     ]
     return num_cols, cat_cols, bin_cols
 
@@ -64,9 +67,18 @@ df_raw = load_dataset(uploaded_file)
 # Nettoyage des espaces résiduels sur les colonnes
 df_raw.columns = df_raw.columns.str.strip()
 
-target_col = st.sidebar.selectbox("Sélectionner la Target (Optionnel)", ["None"] + list(df_raw.columns))
+target_col = st.sidebar.selectbox(
+    "Sélectionner la Target (Optionnel)", ["None"] + list(df_raw.columns)
+)
 
-tabs = st.tabs(["1. Inspection & Diagnostic", "2. EDA & Distributions", "3. Corrélations & Sélection", "4. Export Data Prep"])
+tabs = st.tabs(
+    [
+        "1. Inspection & Diagnostic",
+        "2. EDA & Distributions",
+        "3. Corrélations & Sélection",
+        "4. Export Data Prep",
+    ]
+)
 
 # --- Onglet 1 : Inspection & Diagnostic ---
 with tabs[0]:
@@ -94,20 +106,28 @@ with tabs[1]:
     col_eda_1, col_eda_2 = st.columns(2)
     with col_eda_1:
         st.markdown("##### Distribution continue")
-        selected_num = st.selectbox("Variable numérique", num_cols if num_cols else ["Aucune"])
+        selected_num = st.selectbox(
+            "Variable numérique", num_cols if num_cols else ["Aucune"]
+        )
         if selected_num != "Aucune":
             fig, ax = plt.subplots(figsize=(6, 3.5))
-            sns.histplot(df_raw[selected_num].dropna(), kde=True, ax=ax, color="#439cc8")
+            sns.histplot(
+                df_raw[selected_num].dropna(), kde=True, ax=ax, color="#439cc8"
+            )
             st.pyplot(fig)
             plt.close(fig)
 
     with col_eda_2:
         st.markdown("##### Distribution catégorielle / discrète")
-        selected_cat = st.selectbox("Variable catégorielle", cat_cols if cat_cols else ["Aucune"])
+        selected_cat = st.selectbox(
+            "Variable catégorielle", cat_cols if cat_cols else ["Aucune"]
+        )
         if selected_cat != "Aucune":
             fig, ax = plt.subplots(figsize=(6, 3.5))
             order = df_raw[selected_cat].value_counts().head(15).index
-            sns.countplot(data=df_raw, y=selected_cat, order=order, ax=ax, color="#439cc8")
+            sns.countplot(
+                data=df_raw, y=selected_cat, order=order, ax=ax, color="#439cc8"
+            )
             st.pyplot(fig)
             plt.close(fig)
 
@@ -119,23 +139,33 @@ with tabs[2]:
 
     if len(num_cols) > 1:
         high_corr_pairs = correlated_features(df_raw[num_cols], threshold=threshold)
-        st.markdown(f"**Paires fortement corrélées identifiées (|r| > {threshold}) :** {len(high_corr_pairs)}")
+        st.markdown(
+            f"**Paires fortement corrélées identifiées (|r| > {threshold}) :** {len(high_corr_pairs)}"
+        )
 
         if high_corr_pairs:
-            df_corr_pairs = pd.DataFrame(high_corr_pairs, columns=["Feature 1", "Feature 2", "Corrélation"])
+            df_corr_pairs = pd.DataFrame(
+                high_corr_pairs, columns=["Feature 1", "Feature 2", "Corrélation"]
+            )
             st.dataframe(df_corr_pairs, use_container_width=True)
 
         if target_col != "None" and pd.api.types.is_numeric_dtype(df_raw[target_col]):
             st.markdown("##### Corrélation avec la Target")
-            top_corr = target_correlations(df_raw.drop(columns=[target_col]), df_raw[target_col], n_top=10)
+            top_corr = target_correlations(
+                df_raw.drop(columns=[target_col]), df_raw[target_col], n_top=10
+            )
             st.dataframe(top_corr, use_container_width=True)
 
             if st.button("Filtrer les variables redondantes"):
-                df_reduced, dropped = drop_redundant_features(df_raw, target_col, threshold=threshold)
+                df_reduced, dropped = drop_redundant_features(
+                    df_raw, target_col, threshold=threshold
+                )
                 st.session_state["df_prep"] = df_reduced
                 st.success(f"{len(dropped)} colonnes supprimées : {', '.join(dropped)}")
     else:
-        st.warning("Pas assez de variables numériques pour calculer la matrice de corrélation.")
+        st.warning(
+            "Pas assez de variables numériques pour calculer la matrice de corrélation."
+        )
 
 # --- Onglet 4 : Data Prep & Export ---
 with tabs[3]:
@@ -145,7 +175,9 @@ with tabs[3]:
 
     st.markdown(f"Dimensions actuelles : `{df_to_export.shape}`")
 
-    cols_to_remove = st.multiselect("Suppression manuelle de colonnes", df_to_export.columns)
+    cols_to_remove = st.multiselect(
+        "Suppression manuelle de colonnes", df_to_export.columns
+    )
     if cols_to_remove:
         df_to_export = df_to_export.drop(columns=cols_to_remove)
 

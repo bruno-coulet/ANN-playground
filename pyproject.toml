@@ -32,3 +32,44 @@ explicit = true
 
 [tool.uv.sources]
 torch = { index = "pytorch-cpu" }
+
+[dependency-groups]
+dev = [
+    "black>=26.10.1",
+    "pre-commit>=4.7.0",
+    "pytest>=9.1.1",
+    "pytest-cov>=7.1.0",
+    "pytest-mock>=3.16.0",
+    "ruff>=0.17.1",
+]
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+exclude = [
+    "**/*_old.py",
+    "notebooks"
+]
+
+[tool.ruff.lint]
+
+select = [
+    "E",
+    "F",
+    "I",
+    "B"
+]
+
+ignore = [
+    "E501"
+]
+
+[tool.pytest.ini_options]
+
+testpaths = [
+    "tests"
+]
+
+pythonpath = [
+    "src"
+]
