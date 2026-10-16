@@ -73,3 +73,8 @@ testpaths = [
 pythonpath = [
     "src"
 ]
+
+[tool.coverage.run]
+omit = [
+    "src/ann_playground/cleaning_utils_old.py",
+]
