@@ -3,7 +3,9 @@
 # Optimized with BuildKit cache mounts and explicit wheels
 # ==============================================================================
 
-# Stage 1: Build virtual environment
+# ------------------------------------------------------------------------------
+# Stage 1: Dependency Builder
+# ------------------------------------------------------------------------------
 FROM python:3.12-slim AS builder
 
 # Install uv from official binary image
@@ -14,13 +16,15 @@ WORKDIR /app
 ENV UV_COMPILE_BYTECODE=1 \
     UV_LINK_MODE=copy
 
-# Leverage BuildKit cache for uv download cache
+# Synchronize dependencies using BuildKit cache mount to avoid re-downloading wheels
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=uv.lock,target=uv.lock \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     uv sync --frozen --no-install-project --no-dev
 
-# Stage 2: Runtime image
+# ------------------------------------------------------------------------------
+# Stage 2: Runtime Environment
+# ------------------------------------------------------------------------------
 FROM python:3.12-slim AS runtime
 
 WORKDIR /app
@@ -30,13 +34,14 @@ ENV PYTHONUNBUFFERED=1 \
     PATH="/app/.venv/bin:$PATH" \
     PYTHONPATH="/app/src"
 
-
-
-# Copy pre-built virtual environment from builder stage
+# Copy isolated pre-built virtual environment from builder stage
 COPY --from=builder /app/.venv /app/.venv
 
-# Copy project definition and source code
+# Copy project configuration and source tree
 COPY pyproject.toml ./
 COPY src/ ./src/
 
 EXPOSE 8501 5000
+
+# Default command launches the Streamlit entry point
+CMD ["streamlit", "run", "src/ann_playground/apps/app.py", "--server.port=8501", "--server.address=0.0.0.0"]
