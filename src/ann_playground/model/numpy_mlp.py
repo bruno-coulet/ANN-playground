@@ -9,6 +9,7 @@ Classes :
 """
 
 from typing import List, Tuple
+
 import numpy as np
 
 
@@ -24,7 +25,9 @@ class DenseLayer:
             activation: Activation function ('relu', 'sigmoid', 'tanh', 'softmax').
         """
         self.activation: str = activation
-        limit: float = np.sqrt(2.0 / n_in) if activation == "relu" else np.sqrt(1.0 / n_in)
+        limit: float = (
+            np.sqrt(2.0 / n_in) if activation == "relu" else np.sqrt(1.0 / n_in)
+        )
         self.weights: np.ndarray = np.random.randn(n_in, n_out) * limit
         self.biases: np.ndarray = np.zeros((1, n_out))
         self.inputs: np.ndarray = np.empty((0,))
@@ -95,8 +98,12 @@ class NumpyMLP:
         """
         self.layers: List[DenseLayer] = []
         for i in range(len(layer_sizes) - 2):
-            self.layers.append(DenseLayer(layer_sizes[i], layer_sizes[i + 1], activation))
-        self.layers.append(DenseLayer(layer_sizes[-2], layer_sizes[-1], activation="softmax"))
+            self.layers.append(
+                DenseLayer(layer_sizes[i], layer_sizes[i + 1], activation)
+            )
+        self.layers.append(
+            DenseLayer(layer_sizes[-2], layer_sizes[-1], activation="softmax")
+        )
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         """Propagate input across all layers.
@@ -123,7 +130,9 @@ class NumpyMLP:
         for layer in reversed(self.layers):
             dvalues = layer.backward(dvalues)
 
-    def train_step(self, x: np.ndarray, y_true: np.ndarray, lr: float) -> Tuple[float, float]:
+    def train_step(
+        self, x: np.ndarray, y_true: np.ndarray, lr: float
+    ) -> Tuple[float, float]:
         """Execute one gradient descent step over a given batch.
 
         Args:
@@ -174,4 +183,3 @@ class NumpyMLP:
         """
         probs = self.forward(x)
         return np.argmax(probs, axis=1)
-

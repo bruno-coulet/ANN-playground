@@ -6,7 +6,7 @@
 # ------------------------------------------------------------------------------
 # Stage 1: Dependency Builder
 # ------------------------------------------------------------------------------
-FROM python:3.12-slim AS builder
+FROM python:3.13-slim AS builder
 
 # Install uv from official binary image
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
@@ -20,12 +20,12 @@ ENV UV_COMPILE_BYTECODE=1 \
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=uv.lock,target=uv.lock \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
-    uv sync --frozen --no-install-project --no-dev
+    uv sync --frozen --no-install-project --no-dev --no-python-downloads
 
 # ------------------------------------------------------------------------------
 # Stage 2: Runtime Environment
 # ------------------------------------------------------------------------------
-FROM python:3.12-slim AS runtime
+FROM python:3.13-slim AS runtime
 
 WORKDIR /app
 

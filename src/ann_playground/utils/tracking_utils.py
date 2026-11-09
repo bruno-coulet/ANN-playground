@@ -1,19 +1,7 @@
-"""
-Module : tracker_utils.py
-Description : MLflow tracking orchestration, experiment lifecycle management,
-              and metrics/artifacts logging for neural network training.
-
-Functions :
-    - get_tracking_uri() -> str
-    - init_mlflow_experiment(experiment_name, tracking_uri) -> str
-    - log_keras_training(run_name, params, model, history, metrics_test, fig_cm) -> None
-    - log_numpy_training(run_name, params, history, metrics_test, fig_cm) -> None
-"""
-
 from typing import Any, Dict, List, Optional
 import os
 import mlflow
-import mlflow.keras
+# import mlflow.keras
 from mlflow.entities import Experiment
 from mlflow.exceptions import MlflowException
 from mlflow.tracking import MlflowClient
@@ -121,7 +109,7 @@ def log_keras_training(
 
         mlflow.log_metrics(metrics_test)
         mlflow.log_figure(fig_cm, "confusion_matrix.html")
-        mlflow.keras.log_model(model, artifact_path="model")
+        # mlflow.keras.log_model(model, artifact_path="model")
 
 
 def log_numpy_training(

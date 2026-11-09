@@ -11,13 +11,14 @@ wheels/
 
 # Securite
 .env
+*.ini
 
 # Caches Python
 *.pyc
 __pycache__/
 
 # Donnees locales
-data/
+/data/
 temp/
 tutorials/
 
@@ -30,3 +31,20 @@ presentation/
 # MLFlow
 mlflow.db
 mlartifacts/
+
+
+.venv/
+
+.pytest_cache/
+
+.coverage
+
+htmlcov/
+
+.mypy_cache/
+
+.ruff_cache/
+
+__pycache__/
+
+*.pyc
