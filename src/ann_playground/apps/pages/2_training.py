@@ -8,24 +8,21 @@ import streamlit as st
 import matplotlib.pyplot as plt
 from sklearn.metrics import classification_report, confusion_matrix
 
-# from ann_playground.model.keras_mlp import StreamlitEpochCallback, build_keras_mlp
-from ann_playground.model.numpy_mlp import NumpyMLP
-
 from ann_playground.config import PROCESSED_DATA_DIR, EXPERIMENT_NAME
+from ann_playground.model.keras_mlp import StreamlitEpochCallback, build_keras_mlp
+from ann_playground.model.numpy_mlp import NumpyMLP
 
 from ann_playground.data.data_utils import (
     load_prepared_datasets,
 )
+
 from ann_playground.data.data_visualisation import (
     plot_learning_curves,
 )
 
-from ann_playground.utils.tracking_utils import init_mlflow_experiment
-
-
 from ann_playground.utils.tracking_utils import (
     init_mlflow_experiment,
-    # log_keras_training,
+    log_keras_training,
     log_numpy_training,
 )
 
@@ -40,9 +37,20 @@ def cached_load_prepared_datasets() -> Tuple[pd.DataFrame | None, pd.DataFrame |
     """Load train and test Parquet matrices from processed data directory."""
     return load_prepared_datasets()
 
-# ==============================================================================
+# ---------------------------------------------------------------------------
+# Authentification
+# ---------------------------------------------------------------------------
+
+# Vérification de sécurité obligatoire sur chaque sous-pages
+if not st.session_state.get("authenticated", False):
+    st.warning("⚠️ Veuillez vous connecter depuis la page d'accueil pour accéder à cette section.")
+    st.stop()
+
+# ---------------------------------------------------------------------------
+# Training
+# ---------------------------------------------------------------------------
+
 # Start MLFlow
-# ==============================================================================
 
 try:
     experiment_id = init_mlflow_experiment(EXPERIMENT_NAME)
@@ -50,9 +58,8 @@ except Exception as err:
     st.warning(f"MLflow service connection unavailable: {err}. Runs will attempt reconnect on launch.")
     experiment_id = "0"
 
-# ==============================================================================
+
 # UI Setup and Sidebar
-# ==============================================================================
 
 df_train, df_test = cached_load_prepared_datasets()
 
@@ -101,9 +108,8 @@ with st.sidebar:
             "Taille de batch", options=[16, 32, 64, 128, 256], value=32
         )
 
-# ==============================================================================
+
 # Main Content
-# ==============================================================================
 
 if df_train is None or df_test is None:
     st.warning(
@@ -136,6 +142,7 @@ tab_train, tab_eval, tab_diagnose = st.tabs(
     ]
 )
 
+
 # ------------------------------------------------------------------------------
 # 1 · Entraînement
 # ------------------------------------------------------------------------------
@@ -150,78 +157,76 @@ with tab_train:
 
     if launch_btn:
         if engine == "Keras (TensorFlow)":
-            st.markdown("#### Work in Progress")
+            model = build_keras_mlp(
+                input_dim=n_features,
+                num_classes=n_classes,
+                hidden_layers=hidden_units,
+                activation=activation_fn,
+                dropout_rate=dropout,
+                use_batch_norm=batch_norm,
+                learning_rate=learning_rate,
+            )
 
-#           model = build_keras_mlp(
-#               input_dim=n_features,
-#               num_classes=n_classes,
-#               hidden_layers=hidden_units,
-#               activation=activation_fn,
-#               dropout_rate=dropout,
-#               use_batch_norm=batch_norm,
-#               learning_rate=learning_rate,
-#           )
-#
-#           cb = StreamlitEpochCallback(
-#               total_epochs=epochs,
-#               chart_placeholder=chart_spot,
-#               progress_bar=progress_bar,
-#           )
-#
-#           history = model.fit(
-#               X_train,
-#               y_train,
-#               validation_data=(X_test, y_test),
-#               epochs=epochs,
-#               batch_size=batch_size,
-#               callbacks=[cb],
-#               verbose=0,
-#           )
-#
-#           y_pred = np.argmax(model.predict(X_test), axis=1)
-#           test_loss, test_acc = model.evaluate(X_test, y_test, verbose=0)
-#
-#           class_labels = [f"Classe {c}" for c in sorted(np.unique(y_test))]
-#           cm = confusion_matrix(y_test, y_pred)
-#           fig_cm = px.imshow(
-#               cm,
-#               text_auto=True,
-#               x=class_labels,
-#               y=class_labels,
-#               color_continuous_scale="Blues",
-#               title=f"Confusion Matrix - Keras ({activation_fn})",
-#           )
-#
-#           run_params = {
-#               "engine": "keras",
-#               "hidden_layers": str(hidden_units),
-#               "activation": activation_fn,
-#               "learning_rate": learning_rate,
-#               "dropout_rate": dropout,
-#               "batch_norm": batch_norm,
-#               "epochs": epochs,
-#               "batch_size": batch_size,
-#           }
-#           metrics_summary = {
-#               "test_loss": float(test_loss),
-#               "test_accuracy": float(test_acc),
-#           }
-#
-#           log_keras_training(
-#              run_name=f"keras_mlp_{activation_fn}_lr{learning_rate}",
-#              params=run_params,
-#              model=model,
-#              history=history.history,
-#              metrics_test=metrics_summary,
-#              fig_cm=fig_cm,
-#           )
-#
-#           st.session_state["trained_model"] = model
-#           st.session_state["history_df"] = pd.DataFrame(history.history)
-#           st.session_state["history_obj"] = pd.DataFrame(history.history)
-#           st.session_state["y_pred"] = y_pred
-#           st.session_state["engine"] = "keras"
-#           st.success("Entraînement Keras terminé et enregistré dans MLflow.")            
+            cb = StreamlitEpochCallback(
+                total_epochs=epochs,
+                chart_placeholder=chart_spot,
+                progress_bar=progress_bar,
+            )
+
+            history = model.fit(
+                X_train,
+                y_train,
+                validation_data=(X_test, y_test),
+                epochs=epochs,
+                batch_size=batch_size,
+                callbacks=[cb],
+                verbose=0,
+            )
+
+            y_pred = np.argmax(model.predict(X_test), axis=1)
+            test_loss, test_acc = model.evaluate(X_test, y_test, verbose=0)
+
+            class_labels = [f"Classe {c}" for c in sorted(np.unique(y_test))]
+            cm = confusion_matrix(y_test, y_pred)
+            fig_cm = px.imshow(
+                cm,
+                text_auto=True,
+                x=class_labels,
+                y=class_labels,
+                color_continuous_scale="Blues",
+                title=f"Confusion Matrix - Keras ({activation_fn})",
+            )
+
+            run_params = {
+                "engine": "keras",
+                "hidden_layers": str(hidden_units),
+                "activation": activation_fn,
+                "learning_rate": learning_rate,
+                "dropout_rate": dropout,
+                "batch_norm": batch_norm,
+                "epochs": epochs,
+                "batch_size": batch_size,
+            }
+            metrics_summary = {
+                "test_loss": float(test_loss),
+                "test_accuracy": float(test_acc),
+            }
+
+            log_keras_training(
+               run_name=f"keras_mlp_{activation_fn}_lr{learning_rate}",
+               params=run_params,
+               model=model,
+               history=history.history,
+               metrics_test=metrics_summary,
+               fig_cm=fig_cm,
+            )
+
+            st.session_state["trained_model"] = model
+            st.session_state["history_df"] = pd.DataFrame(history.history)
+            st.session_state["history_obj"] = pd.DataFrame(history.history)
+            st.session_state["y_pred"] = y_pred
+            st.session_state["engine"] = "keras"
+            st.success("Entraînement Keras terminé et enregistré dans MLflow.")
 
         else:
             y_train_oh = np.eye(n_classes)[y_train]
@@ -384,7 +389,6 @@ with tab_train:
         )
         chart_spot.plotly_chart(fig, use_container_width=True)
 
-
 # ------------------------------------------------------------------------------
 # 2 · Évaluation
 # ------------------------------------------------------------------------------
@@ -429,6 +433,7 @@ with tab_eval:
         with col_center:
             fig = plot_learning_curves(df, "Learning Curve")
             st.pyplot(fig)
+
 
 # ------------------------------------------------------------------------------
 # 3 · Diagnostic
