@@ -111,4 +111,46 @@ class StreamlitEpochCallback(keras.callbacks.Callback):
             self.chart_placeholder.plotly_chart(fig, use_container_width=True)
 
 
+def build_keras_mlp(
+    input_dim: int,
+    num_classes: int,
+    hidden_layers: List[int],
+    activation: str,
+    dropout_rate: float,
+    use_batch_norm: bool,
+    learning_rate: float,
+) -> keras.Model:
+    """Build and compile a multi-class MLP with Keras.
 
+    Args:
+        input_dim: Number of input features.
+        num_classes: Number of target classes.
+        hidden_layers: List containing units per hidden layer.
+        activation: Non-linear activation function name.
+        dropout_rate: Dropout regularization fraction.
+        use_batch_norm: Whether to insert batch normalization layers.
+        learning_rate: Adam optimizer learning rate.
+
+    Returns:
+        Compiled Keras Model instance.
+    """
+    model = models.Sequential()
+    model.add(layers.Input(shape=(input_dim,)))
+
+    for neurons in hidden_layers:
+        model.add(layers.Dense(neurons))
+        if use_batch_norm:
+            model.add(layers.BatchNormalization())
+        model.add(layers.Activation(activation))
+        if dropout_rate > 0.0:
+            model.add(layers.Dropout(dropout_rate))
+
+    model.add(layers.Dense(num_classes, activation="softmax"))
+
+    opt = optimizers.Adam(learning_rate=learning_rate)
+    model.compile(
+        optimizer=opt,
+        loss="sparse_categorical_crossentropy",
+        metrics=["accuracy"],
+    )
+    return model
