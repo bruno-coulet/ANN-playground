@@ -11,6 +11,7 @@ Constants :
     - DATA : Default path to raw dataset file.
     - EXPERIMENT_NAME : Target MLflow tracking experiment identifier.
 """
+
 import os
 from pathlib import Path
 from typing import Final
@@ -27,7 +28,7 @@ from typing import Final
 PACKAGE_DIR: Final[Path] = Path(__file__).resolve().parent
 BASE_DIR: Final[Path] = Path(__file__).resolve().parents[2]
 
-SRC_DIR:Final[Path] = BASE_DIR / "src" / "ann_playground"
+SRC_DIR: Final[Path] = BASE_DIR / "src" / "ann_playground"
 DATA_DIR: Final[Path] = BASE_DIR / "data"
 RAW_DATA_DIR: Final[Path] = DATA_DIR / "raw_data"
 CLEAN_DATA_DIR: Final[Path] = DATA_DIR / "clean_data"
@@ -47,5 +48,3 @@ MLFLOW_TRACKING_URI: Final[str] = os.getenv(
 )
 
 EXPERIMENT_NAME: str = "ANN_Playground"
-
-

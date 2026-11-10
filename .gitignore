@@ -12,6 +12,11 @@ wheels/
 # Securite
 .env
 
+# MLFlow
+mlruns/
+mlflow.db
+mlartifacts/
+
 # Caches Python
 *.pyc
 __pycache__/
@@ -27,6 +32,3 @@ CLAUDE.md
 
 presentation/
 
-# MLFlow
-mlflow.db
-mlartifacts/

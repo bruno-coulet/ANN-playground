@@ -23,6 +23,7 @@ Functions :
 
 from pathlib import Path
 from typing import Any
+
 import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator, clone
@@ -48,9 +49,7 @@ def missing_summary(df: pd.DataFrame) -> pd.DataFrame:
     ).sort_values(by="missing_count", ascending=False)
 
 
-def special_columns(
-    df: pd.DataFrame, max_modalities: int = 20
-) -> dict[str, list[str]]:
+def special_columns(df: pd.DataFrame, max_modalities: int = 20) -> dict[str, list[str]]:
     """Identify and categorize DataFrame columns according to structural features.
 
     Args:
@@ -72,7 +71,7 @@ def special_columns(
         "boolean": [
             col
             for col in df.columns
-            if set(df[col].dropna().unique()).issubset({True, False, 1, 0})
+            if set(df[col].dropna().unique()).issubset({True, False})
         ],
     }
 
@@ -187,7 +186,9 @@ def convert_bool_to_uint8(
             if keep_na:
                 df_out[col] = df_out[col].astype("boolean").astype("UInt8")
             else:
-                df_out[col] = df_out[col].astype("boolean").fillna(False).astype("UInt8")
+                df_out[col] = (
+                    df_out[col].astype("boolean").fillna(False).astype("UInt8")
+                )
     return df_out
 
 
@@ -203,9 +204,7 @@ def lower_columns(df: pd.DataFrame, cols: list[str]) -> pd.DataFrame:
     """
     df_out = df.copy()
     existing_cols = [c for c in cols if c in df_out.columns]
-    string_cols = [
-        c for c in existing_cols if pd.api.types.is_string_dtype(df_out[c])
-    ]
+    string_cols = [c for c in existing_cols if pd.api.types.is_string_dtype(df_out[c])]
     for col in string_cols:
         df_out[col] = df_out[col].str.lower()
     return df_out
@@ -387,9 +386,9 @@ def preprocess_data(
         numeric_columns = X_train.select_dtypes(include=[np.number]).columns.tolist()
 
     if categorical_columns is None:
-        categorical_columns = (
-            X_train.select_dtypes(include=["object", "category", "string"]).columns.tolist()
-        )
+        categorical_columns = X_train.select_dtypes(
+            include=["object", "category", "string"]
+        ).columns.tolist()
 
     transformers = []
     if numeric_columns:
@@ -398,17 +397,23 @@ def preprocess_data(
         transformers.append(
             (
                 "cat",
-                OneHotEncoder(drop="first", handle_unknown="ignore", sparse_output=False),
+                OneHotEncoder(
+                    drop="first", handle_unknown="ignore", sparse_output=False
+                ),
                 categorical_columns,
             )
         )
 
     if not transformers:
-        raise ValueError("No valid numeric or categorical columns found for transformation.")
+        raise ValueError(
+            "No valid numeric or categorical columns found for transformation."
+        )
 
     column_transformer = ColumnTransformer(transformers=transformers, remainder="drop")
 
     X_train_processed = column_transformer.fit_transform(X_train)
-    X_test_processed = column_transformer.transform(X_test) if X_test is not None else None
+    X_test_processed = (
+        column_transformer.transform(X_test) if X_test is not None else None
+    )
 
     return X_train_processed, X_test_processed, column_transformer

@@ -19,10 +19,10 @@ Functions :
     - plot_target_correlations(X, y, n_top, figsize) -> None
 """
 
-from collections.abc import Iterable
 import math
-from pathlib import Path
+from collections.abc import Iterable
 from typing import Any
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -453,7 +453,9 @@ def plot_correlation_circle(
         Liste des noms des variables initiales.
     """
     fig, ax = plt.subplots(figsize=(8, 8))
-    ax.add_artist(plt.Circle((0, 0), 1, color="gray", fill=False, linestyle="-", alpha=0.5))
+    ax.add_artist(
+        plt.Circle((0, 0), 1, color="gray", fill=False, linestyle="-", alpha=0.5)
+    )
 
     for i, feature in enumerate(feature_names):
         x = pca.components_[components[0], i]
@@ -516,7 +518,9 @@ def plot_features_correlations(
         vmax=1.0,
         cbar_kws={"label": "Coefficient de corrélation"},
     )
-    plt.title(f"Colinarity between numerical features (choosen threshold : {threshold})")
+    plt.title(
+        f"Colinarity between numerical features (choosen threshold : {threshold})"
+    )
     plt.tight_layout()
     plt.show()
 
