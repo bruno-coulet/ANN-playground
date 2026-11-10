@@ -12,6 +12,11 @@ wheels/
 # Securite
 .env
 
+# MLFlow
+mlruns/
+mlflow.db
+mlartifacts/
+
 # Caches Python
 *.pyc
 __pycache__/

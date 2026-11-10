@@ -35,7 +35,7 @@ class StreamlitEpochCallback(keras.callbacks.Callback):
         self.total_epochs: int = total_epochs
         self.chart_placeholder: Any = chart_placeholder
         self.progress_bar: Any = progress_bar
-        self.history_records: List[dict[str, float]] = []
+        self.history_records: list[dict[str, float]] = []
 
     def on_epoch_end(self, epoch: int, logs: dict[str, float] | None = None) -> None:
         """Update metrics and refresh the plot on each epoch completion."""
@@ -114,7 +114,7 @@ class StreamlitEpochCallback(keras.callbacks.Callback):
 def build_keras_mlp(
     input_dim: int,
     num_classes: int,
-    hidden_layers: List[int],
+    hidden_layers: list[int],
     activation: str,
     dropout_rate: float,
     use_batch_norm: bool,

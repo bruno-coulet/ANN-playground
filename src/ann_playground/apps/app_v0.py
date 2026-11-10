@@ -41,7 +41,7 @@ def load_dataset(file) -> pd.DataFrame:
     raise ValueError("Format non supporté. Fournir un CSV ou Parquet.")
 
 
-def detect_types(df: pd.DataFrame) -> Tuple[List[str], List[str], List[str]]:
+def detect_types(df: pd.DataFrame) -> tuple[list[str], list[str], list[str]]:
     """Détecte les types statistiques usuels."""
     num_cols = df.select_dtypes(include=[np.number]).columns.tolist()
     cat_cols = df.select_dtypes(

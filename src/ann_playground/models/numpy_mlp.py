@@ -89,14 +89,14 @@ class DenseLayer:
 class NumpyMLP:
     """Multi-Layer Perceptron implemented from scratch in pure NumPy."""
 
-    def __init__(self, layer_sizes: List[int], activation: str = "relu") -> None:
+    def __init__(self, layer_sizes: list[int], activation: str = "relu") -> None:
         """Assemble sequential dense layers ending with a softmax classifier.
 
         Args:
             layer_sizes: List of neuron counts from input layer to output layer.
             activation: Activation function for hidden layers.
         """
-        self.layers: List[DenseLayer] = []
+        self.layers: list[DenseLayer] = []
         for i in range(len(layer_sizes) - 2):
             self.layers.append(
                 DenseLayer(layer_sizes[i], layer_sizes[i + 1], activation)
@@ -156,7 +156,7 @@ class NumpyMLP:
 
         return float(loss), acc
 
-    def evaluate(self, x: np.ndarray, y_true: np.ndarray) -> Tuple[float, float]:
+    def evaluate(self, x: np.ndarray, y_true: np.ndarray) -> tuple[float, float]:
         """Compute evaluation metrics on a validation or test set.
 
         Args:

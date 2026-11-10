@@ -1,57 +1,75 @@
 """
-Module : tracker_utils.py
-Description : MLflow tracking orchestration, experiment lifecycle management,
-              and metrics/artifacts logging for neural network training.
+Module: tracker_utils.py
+Description: MLflow tracking orchestration, experiment lifecycle management,
+             and robust artifact persistence for Keras 3 and custom NumPy models.
 
-Functions :
-    - get_tracking_uri() -> str
-    - init_mlflow_experiment(experiment_name, tracking_uri) -> str
+Functions:
+    - init_mlflow_experiment(experiment_name: str) -> str
     - log_keras_training(run_name, params, model, history, metrics_test, fig_cm) -> None
-    - log_numpy_training(run_name, params, history, metrics_test, fig_cm) -> None
+    - log_numpy_training(run_name, params, model, history, metrics_test, fig_cm) -> None
 """
 
 import os
 from typing import Any, Dict, List, Optional
 
 import mlflow
-import mlflow.keras
-from mlflow.entities import Experiment
-from mlflow.exceptions import MlflowException
-from mlflow.tracking import MlflowClient
+import numpy as np
+import plotly.graph_objects as go
 
 from ann_playground.config import MLFLOW_TRACKING_URI
 
 
-def get_tracking_uri() -> str:
+class NumpyPyfuncWrapper(mlflow.pyfunc.PythonModel):
     """
-    Resolve active MLflow tracking URI from environment or project configuration.
-
-    Returns
-    -------
-    str
-        Validated URI pointing to the MLflow tracking server or database.
+    Wrapper class enabling the serialization of custom NumPy models
+    using MLflow's standard pyfunc flavor.
     """
-    return os.getenv("MLFLOW_TRACKING_URI", str(MLFLOW_TRACKING_URI))
+
+    def __init__(self, model_instance: Any) -> None:
+        """
+        Initialize the pyfunc wrapper.
+
+        Parameters
+        ----------
+        model_instance : Any
+            The instantiated and fitted NumpyMLP model.
+        """
+        self.model = model_instance
+
+    def predict(
+        self, context: mlflow.pyfunc.PythonModelContext, model_input: np.ndarray
+    ) -> np.ndarray:
+        """
+        Execute forward pass inference.
+
+        Parameters
+        ----------
+        context : mlflow.pyfunc.PythonModelContext
+            Context provided by MLflow during model loading.
+        model_input : np.ndarray
+            Input feature matrix.
+
+        Returns
+        -------
+        np.ndarray
+            Predicted class indices or probabilities.
+        """
+        return self.model.predict(np.asarray(model_input))
 
 
-def init_mlflow_experiment(
-    experiment_name: str,
-    tracking_uri: Optional[str] = None,
-) -> str:
+def init_mlflow_experiment(experiment_name: str) -> str:
     """
-    Safely retrieve, create, or restore an MLflow experiment.
+    Configure the tracking client and initialize the target experiment.
 
     Parameters
     ----------
     experiment_name : str
-        Target experiment name.
-    tracking_uri : Optional[str], default=None
-        Custom tracking server URI. If None, resolves via get_tracking_uri().
+        Name of the MLflow experiment.
 
     Returns
     -------
     str
-        Identifier of the active MLflow experiment.
+        Unique identifier assigned to the experiment.
     """
     uri: str = tracking_uri or get_tracking_uri()
     mlflow.set_tracking_uri(uri)
@@ -75,89 +93,115 @@ def init_mlflow_experiment(
         client.restore_experiment(experiment.experiment_id)
         experiment_id = experiment.experiment_id
     else:
-        experiment_id = experiment.experiment_id
+        experiment_id = exp.experiment_id
 
-    mlflow.set_experiment(experiment_name=experiment_name)
+    mlflow.set_experiment(experiment_name)
     return experiment_id
 
 
 def log_keras_training(
     run_name: str,
-    params: Dict[str, Any],
+    params: dict[str, Any],
     model: Any,
-    history: Dict[str, List[float]],
-    metrics_test: Dict[str, float],
-    fig_cm: Any,
+    history: dict[str, Sequence[float]],
+    metrics_test: dict[str, float],
+    fig_cm: go.Figure,
 ) -> None:
     """
-    Log hyperparameters, learning curves, final test metrics, and confusion matrix for Keras.
+    Log hyperparameters, epoch curves, confusion matrix, and Keras 3 artifact.
 
     Parameters
     ----------
     run_name : str
-        Descriptive name for the MLflow run.
-    params : Dict[str, Any]
-        Dictionary of hyperparameters.
+        Label assigned to the current run.
+    params : dict[str, Any]
+        Model topology and optimization hyperparameters.
     model : Any
-        Fitted Keras model instance.
-    history : Dict[str, List[float]]
-        Training metrics dictionary returned by model.fit().
-    metrics_test : Dict[str, float]
+        Trained Keras model instance.
+    history : dict[str, Sequence[float]]
+        Training metric trajectories per epoch.
+    metrics_test : dict[str, float]
         Evaluation metrics on the test partition.
-    fig_cm : Any
+    fig_cm : go.Figure
         Plotly confusion matrix figure.
     """
-    uri: str = get_tracking_uri()
-    mlflow.set_tracking_uri(uri)
+    mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
 
     with mlflow.start_run(run_name=run_name):
         mlflow.log_params(params)
+        mlflow.log_metrics(metrics_test)
 
-        first_metric: str = next(iter(history.keys()))
-        epochs_count: int = len(history[first_metric])
+        loss_series = history.get("loss", [])
+        epochs_count: int = len(loss_series)
 
         for epoch in range(epochs_count):
-            step_metrics: Dict[str, float] = {
-                metric: float(values[epoch]) for metric, values in history.items()
+            step_metrics: dict[str, float] = {
+                metric_name: float(values[epoch])
+                for metric_name, values in history.items()
+                if epoch < len(values)
             }
             mlflow.log_metrics(step_metrics, step=epoch)
 
-        mlflow.log_metrics(metrics_test)
-        mlflow.log_figure(fig_cm, "confusion_matrix.html")
-        mlflow.keras.log_model(model, artifact_path="model")
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_path: Path = Path(tmp_dir)
+
+            cm_path: Path = tmp_path / "confusion_matrix.html"
+            fig_cm.write_html(str(cm_path))
+            mlflow.log_artifact(str(cm_path))
+
+            mlflow.keras.log_model(model, artifact_path="model")
 
 
 def log_numpy_training(
     run_name: str,
-    params: Dict[str, Any],
-    history: List[Dict[str, float]],
-    metrics_test: Dict[str, float],
-    fig_cm: Any,
+    params: dict[str, Any],
+    model: Any | None,
+    history: Sequence[dict[str, float]],
+    metrics_test: dict[str, float],
+    fig_cm: go.Figure,
 ) -> None:
     """
-    Log hyperparameters, step-wise metrics, and artifacts for the custom NumPy MLP.
+    Log parameters, step metrics, confusion matrix, and serialized NumPy model.
 
     Parameters
     ----------
     run_name : str
-        Descriptive name for the MLflow run.
-    params : Dict[str, Any]
-        Dictionary of hyperparameters.
-    history : List[Dict[str, float]]
-        Per-epoch metric records collected during gradient descent.
-    metrics_test : Dict[str, float]
+        Label assigned to the current run.
+    params : dict[str, Any]
+        Model topology and optimization hyperparameters.
+    model : Any | None
+        Fitted NumpyMLP instance. If None, model serialization is skipped.
+    history : Sequence[dict[str, float]]
+        Step-wise training metrics recorded during gradient descent.
+    metrics_test : dict[str, float]
         Evaluation metrics on the test partition.
-    fig_cm : Any
+    fig_cm : go.Figure
         Plotly confusion matrix figure.
     """
-    uri: str = get_tracking_uri()
-    mlflow.set_tracking_uri(uri)
+    mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
 
     with mlflow.start_run(run_name=run_name):
         mlflow.log_params(params)
-
-        for epoch, metric_dict in enumerate(history):
-            mlflow.log_metrics(metric_dict, step=epoch)
-
         mlflow.log_metrics(metrics_test)
-        mlflow.log_figure(fig_cm, "confusion_matrix.html")
+
+        for step_idx, step_dict in enumerate(history):
+            mlflow.log_metrics(step_dict, step=step_idx)
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_path: Path = Path(tmp_dir)
+
+            cm_path: Path = tmp_path / "confusion_matrix.html"
+            fig_cm.write_html(str(cm_path))
+            mlflow.log_artifact(str(cm_path))
+
+            if model is not None:
+                try:
+                    mlflow.pyfunc.log_model(
+                        artifact_path="model",
+                        python_model=NumpyPyfuncWrapper(model),
+                    )
+                except mlflow.exceptions.MlflowException:
+                    # Fallback to generic joblib artifact if pyfunc fails
+                    model_path: Path = tmp_path / "numpy_mlp.joblib"
+                    joblib.dump(model, model_path)
+                    mlflow.log_artifact(str(model_path), artifact_path="model")
