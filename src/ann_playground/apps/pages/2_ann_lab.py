@@ -44,7 +44,7 @@ except Exception as err:
 
 
 @st.cache_data
-def load_prepared_datasets() -> Tuple[pd.DataFrame | None, pd.DataFrame | None]:
+def load_prepared_datasets() -> tuple[pd.DataFrame | None, pd.DataFrame | None]:
     """Load train and test Parquet matrices from processed data directory."""
     train_file = PROCESSED_DATA_DIR / "train_prepared.parquet"
     test_file = PROCESSED_DATA_DIR / "test_prepared.parquet"
@@ -71,7 +71,7 @@ with st.sidebar:
     st.markdown("#### Hyperparamètres d'architecture")
 
     n_layers = st.slider("Nombre de couches cachées", 1, 4, 2)
-    hidden_units: List[int] = []
+    hidden_units: list[int] = []
     cols = st.columns(n_layers)
     for i in range(n_layers):
         default_val = 64 // (2**i) if 64 // (2**i) >= 8 else 8
@@ -336,6 +336,7 @@ with tab_train:
                 history=records,
                 metrics_test=metrics_summary,
                 fig_cm=fig_cm,
+                model=np_model,
             )
 
             st.session_state["trained_model"] = np_model

@@ -43,6 +43,38 @@ flowchart TB
     end
 ```
 
+### MLflow Tracking and Model Artifacts
+
+The MLflow configuration is centralized in `src/ann_playground/config.py`:
+
+* `MLFLOW_TRACKING_URI` uses the `MLFLOW_TRACKING_URI` environment variable when
+  provided, and otherwise falls back to the project `mlflow.db` SQLite database.
+* `MLFLOW_DB_PATH` points to the tracking database.
+* `MLFLOW_ARTIFACTS_DIR` points to the shared `mlartifacts/` directory.
+* `EXPERIMENT_NAME` identifies the `ANN_Playground` experiment.
+
+`tracker_utils.py` explicitly selects `ANN_Playground` before creating runs.
+Consequently, new runs are stored under the experiment-specific directory:
+
+```text
+mlartifacts/
+└── <experiment_id>/
+    └── <run_id>/
+        └── artifacts/
+            ├── confusion_matrix.html
+            └── model/
+                ├── MLmodel
+                ├── data/
+                └── ...
+```
+
+The experiment ID is normally `1` for `ANN_Playground`; `0` is the MLflow
+`Default` experiment and may contain runs created before the experiment was
+explicitly selected. Keras models are logged with the MLflow Keras flavor, and
+NumPy models with the MLflow PyFunc flavor, so both appear as models in the run
+details. Older `.keras` files logged as generic artifacts remain accessible but
+do not have MLflow model metadata.
+
 ---
 
 ## Dataset
@@ -122,6 +154,11 @@ To stop containers while preserving local SQLite and artifact persistence:
 ```bash
 docker compose down
 ```
+
+The Docker Compose setup mounts the project `mlflow.db` and `mlartifacts/`
+directories into the MLflow server. The Streamlit container sends tracking
+requests to `http://mlflow:5000`; the browser accesses the same server at
+`http://localhost:5000`.
 
 ### 2. Local Standalone Execution
 
