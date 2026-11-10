@@ -8,6 +8,7 @@ Usage :
     uv run streamlit run src/ann_playground/apps/app.py
 """
 
+from typing import Dict, List, Tuple
 
 import numpy as np
 import pandas as pd
@@ -73,7 +74,7 @@ with st.sidebar:
     hidden_units: list[int] = []
     cols = st.columns(n_layers)
     for i in range(n_layers):
-        default_val = max(64 // 2 ** i, 8)
+        default_val = 64 // (2**i) if 64 // (2**i) >= 8 else 8
         units = cols[i].number_input(
             f"L{i + 1}", min_value=4, max_value=256, value=default_val, step=4
         )
@@ -228,7 +229,7 @@ with tab_train:
             np_model = NumpyMLP(
                 [n_features] + hidden_units + [n_classes], activation=activation_fn
             )
-            records: list[dict[str, float]] = []
+            records: List[Dict[str, float]] = []
 
             for ep in range(epochs):
                 indices = np.random.permutation(len(X_train))

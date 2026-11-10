@@ -9,12 +9,9 @@ Functions:
     - log_numpy_training(run_name, params, model, history, metrics_test, fig_cm) -> None
 """
 
-import tempfile
-from collections.abc import Sequence
-from pathlib import Path
-from typing import Any
+import os
+from typing import Any, Dict, List, Optional
 
-import joblib
 import mlflow
 import numpy as np
 import plotly.graph_objects as go
@@ -74,11 +71,27 @@ def init_mlflow_experiment(experiment_name: str) -> str:
     str
         Unique identifier assigned to the experiment.
     """
-    mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
+    uri: str = tracking_uri or get_tracking_uri()
+    mlflow.set_tracking_uri(uri)
+    client: MlflowClient = MlflowClient(tracking_uri=uri)
 
-    exp = mlflow.get_experiment_by_name(experiment_name)
-    if exp is None:
-        experiment_id = mlflow.create_experiment(experiment_name)
+    try:
+        experiment: Optional[Experiment] = client.get_experiment_by_name(
+            experiment_name
+        )
+    except MlflowException:
+        experiment = None
+
+    if experiment is None:
+        try:
+            experiment_id: str = client.create_experiment(experiment_name)
+        except MlflowException:
+            # Race condition fallback if created concurrently
+            exp = client.get_experiment_by_name(experiment_name)
+            experiment_id = exp.experiment_id if exp else "0"
+    elif experiment.lifecycle_stage == "deleted":
+        client.restore_experiment(experiment.experiment_id)
+        experiment_id = experiment.experiment_id
     else:
         experiment_id = exp.experiment_id
 

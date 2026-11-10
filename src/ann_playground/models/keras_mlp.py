@@ -10,7 +10,7 @@ Functions :
     - build_keras_mlp : Instantiates and compiles a sequential Keras classification model.
 """
 
-from typing import Any
+from typing import Any, List
 
 import keras
 import pandas as pd

@@ -21,6 +21,7 @@ Functions :
     - preprocess_data(X_train: pd.DataFrame, X_test: pd.DataFrame | None, numeric_columns: list[str] | None, categorical_columns: list[str] | None, scaler: BaseEstimator) -> tuple[np.ndarray, np.ndarray | None, ColumnTransformer]
 """
 
+import unicodedata
 from pathlib import Path
 from typing import Any
 
@@ -223,10 +224,16 @@ def normalize_text_features(df: pd.DataFrame) -> pd.DataFrame:
     string_cols = df_out.select_dtypes(include=["object", "string"]).columns
     for col in string_cols:
         df_out[col] = df_out[col].astype(str).str.lower().str.strip()
-        df_out[col] = (
-            df_out[col]
-            .str.normalize("NFD")
-            .str.replace(r"[\u0300-\u036f]", "", regex=True)
+        df_out[col] = df_out[col].apply(
+            lambda x: (
+                "".join(
+                    c
+                    for c in unicodedata.normalize("NFD", str(x))
+                    if unicodedata.category(c) != "Mn"
+                )
+                if pd.notna(x)
+                else x
+            )
         )
         df_out[col] = df_out[col].replace({"nan": np.nan, "none": np.nan})
     return df_out
@@ -365,7 +372,7 @@ def preprocess_data(
     X_test: pd.DataFrame | None = None,
     numeric_columns: list[str] | None = None,
     categorical_columns: list[str] | None = None,
-    scaler: BaseEstimator = RobustScaler(),
+    scaler: BaseEstimator | None = None,
 ) -> tuple[np.ndarray, np.ndarray | None, ColumnTransformer]:
     """Fit a ColumnTransformer on train data and transform both sets without leakage.
 
@@ -382,6 +389,9 @@ def preprocess_data(
     Raises:
         ValueError: If no valid numerical or categorical features are provided.
     """
+    if scaler is None:
+        scaler = RobustScaler()
+
     if numeric_columns is None:
         numeric_columns = X_train.select_dtypes(include=[np.number]).columns.tolist()
 

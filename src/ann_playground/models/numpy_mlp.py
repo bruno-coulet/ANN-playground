@@ -8,6 +8,7 @@ Classes :
     - NumpyMLP : Sequential multi-class Multi-Layer Perceptron model.
 """
 
+from typing import List, Tuple
 
 import numpy as np
 
@@ -131,7 +132,7 @@ class NumpyMLP:
 
     def train_step(
         self, x: np.ndarray, y_true: np.ndarray, lr: float
-    ) -> tuple[float, float]:
+    ) -> Tuple[float, float]:
         """Execute one gradient descent step over a given batch.
 
         Args:
