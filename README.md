@@ -1,51 +1,101 @@
-# MLflow Pyfunc Wrapper for Inference: Benefits & Usage
+# Machine Learning Application: Part One (Preprocessing & Training)
 
-This document explains why using an `mlflow.pyfunc` wrapper (`PythonModel`) is beneficial during model inference, especially when working with custom ML models (e.g., pure NumPy implementations).
-
----
-
-## Overview
-
-While tracking metrics and saving raw `.pkl` files covers basic experiment logging, wrapping custom models into MLflow's standard `pyfunc` interface unlocks production-grade MLOps capabilities during inference.
+This repository contains the preprocessing, training, and tracking infrastructure for the custom NumPy Multi-Layer Perceptron (`NumpyMLP`) model, integrated with MLflow and Streamlit.
 
 ---
 
-## Key Benefits at Inference Time
+## 1. Authentication & Configuration Setup
 
-### 1. Unified & Agnostic Prediction API
-* **Without Wrapper:** Your inference script must import original source classes, instantiate objects manually, and call model-specific methods (e.g., `model.forward(X)` or `model.predict(X)`).
+To ensure secure tracking, storage, and deployment, configure the following files in your environment.
+
+### A. Environment File: `.env`
+Used by `docker-compose.yml` to define secure secrets and server routing.
+
+```env
+MLFLOW_FLASK_SERVER_SECRET_KEY=ee0dd1023b0061b2789e666bb25c883a2cea4670a1d865e6e9951c1456bb3b49
+MLFLOW_AUTH_ADMIN_USERNAME=xxxxx
+MLFLOW_AUTH_ADMIN_PASSWORD=xxxxx
+
+EXTERNAL_HOST=xxxxx.xxxxxxx.xxx:5000
+```
+
+### B. Basic Auth Configuration: `mlflow-data/basic_auth.yml`
+Configures authentication permissions and SQLite tracking database location for the MLflow server.
+
+```yaml
+[mlflow]
+default_permission = READ
+database_uri = sqlite:////app/mlflow-data/mlflow.db
+admin_username = xxxxx
+admin_password = xxxxx
+```
+
+### C. Streamlit Secrets: `.streamlit/secrets.toml`
+Stores credentials for Streamlit application access to MLflow or protected UI views.
+
+```toml
+AUTH_USER = "xxxxx"
+AUTH_PASSWORD = "xxxxx"
+```
+
+---
+
+## 2. MLflow Architecture & Storage Scheme
+
+The client-server MLflow setup relies on two persistent volume mounts:
+
+```
+.
+├── mlflow-data/          # Mounted to /app/mlflow-data (SQLite database + basic_auth.yml)
+├── mlartifacts/          # Mounted to /app/mlartifacts (Serialized models, feature maps, plots)
+```
+
+* **`mlflow-data/`**: Stores metadata, experiments, runs, parameters, metrics, and user access records.
+* **`mlartifacts/`**: Stores physical binaries (`.pkl`, `.json`, `.html`, PyFunc wrapped models).
+
+---
+
+## 3. MLflow Pyfunc Wrapper for Inference: Benefits & Usage
+
+### Overview
+While tracking metrics and saving raw `.pkl` files covers basic experiment logging, wrapping custom NumPy models (`NumpyMLP`) into MLflow's standard `pyfunc` interface (`PythonModel`) unlocks production-grade MLOps capabilities during inference.
+
+### Key Benefits at Inference Time
+
+#### 1. Unified & Agnostic Prediction API
+* **Without Wrapper:** Your inference script must import original source classes (`NumpyMLP`), instantiate objects manually, and call model-specific methods (e.g., `model.forward(X)`).
 * **With Wrapper:** Provides a standardized interface regardless of the underlying framework (NumPy, PyTorch, Keras, or Scikit-Learn):
-  ```python
-  import mlflow
 
-  # Standardized loading across all model types
-  model = mlflow.pyfunc.load_model(f"runs:/{run_id}/numpy_model")
+```python
+import mlflow
 
-  # Uniform prediction interface
-  predictions = model.predict(X_new)
-  ```
+# Standardized loading across all model types
+model = mlflow.pyfunc.load_model(f"runs:/{run_id}/numpy_model")
 
-### 2. Absolute Traceability & Dynamic Run Selection
-* **Without Wrapper:** Relying on hardcoded local file paths (e.g., `data/processed_data/numpy_mlp_model.pkl`) creates brittle pipelines prone to broken paths during migration or multi-run comparisons.
-* **With Wrapper:** Models are loaded directly using unique MLflow identifiers (`runs:/<run_id>/numpy_model` or registered model names). Applications like Streamlit can dynamically pull and execute any historical model run on demand.
+# Uniform prediction interface
+predictions = model.predict(X_new)
+```
 
-### 3. Environment & Dependency Consistency
-* When logging via `mlflow.pyfunc.log_model`, MLflow automatically packages execution details and dependencies.
-* Guarantees that reloading the model on a different machine, server, or Docker container executes under identical runtime conditions, eliminating library version mismatches.
+#### 2. Absolute Traceability & Dynamic Run Selection
+* **Without Wrapper:** Relying on hardcoded local file paths (e.g., `data/processed_data/numpy_mlp_model.pkl`) creates brittle pipelines.
+* **With Wrapper:** Models are loaded directly using unique MLflow identifiers (`runs:/<run_id>/numpy_model`). Streamlit can dynamically pull and execute any historical model run on demand.
 
-### 4. Zero-Code Production Deployment (Model Serving)
-* **Without Wrapper:** Exposing the model via a REST API requires writing custom Flask/FastAPI boilerplate code to deserialize pickles and handle requests.
-* **With Wrapper:** MLflow can spin up a production-ready REST API endpoint natively via CLI without additional inference code:
-  ```bash
-  mlflow models serve -m "runs:/<run_id>/numpy_model" --port 5001
-  ```
+#### 3. Environment & Dependency Consistency
+When logging via `mlflow.pyfunc.log_model`, MLflow packages execution details and dependencies, guaranteeing that reloading the model across environments executes under identical runtime conditions.
+
+#### 4. Zero-Code Production Deployment (Model Serving)
+MLflow can spin up a production-ready REST API endpoint natively via CLI without writing FastAPI/Flask wrapper code:
+
+```bash
+mlflow models serve -m "runs:/<run_id>/numpy_model" --port 5001
+```
 
 ---
 
-## Summary Matrix
+## 4. Summary Comparison
 
 | Feature | Direct `.pkl` Load | MLflow `pyfunc` Wrapper |
-| :--- | :---: | :---: |
+| :--- | :--- | :--- |
 | **Local Script Inference** | ✅ Simple & Fast | ✅ Supported |
 | **Framework Agnostic API** | ❌ No | ✅ Yes (`model.predict()`) |
 | **Dynamic Run Retrieval** | ❌ Hardcoded paths | ✅ Built-in via Run ID |
@@ -54,7 +104,7 @@ While tracking metrics and saving raw `.pkl` files covers basic experiment loggi
 
 ---
 
-## Basic Implementation Template
+## 5. Wrapper Implementation Template
 
 ```python
 import pickle
