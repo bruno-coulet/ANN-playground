@@ -4,6 +4,8 @@ Description : Streamlit modular and rusable  Interface
               EDA, cleaning, feature selection
 """
 
+from typing import List, Tuple
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd

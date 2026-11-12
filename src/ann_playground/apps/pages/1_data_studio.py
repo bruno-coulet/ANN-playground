@@ -53,7 +53,7 @@ def load_source_data(file_path: Path | Any) -> pd.DataFrame:
         if name.endswith(".csv"):
             df = pd.read_csv(file_path, sep=None, engine="python")
         elif name.endswith(".parquet"):
-            df = pd.read_parquet(file_file)
+            df = pd.read_parquet(file_path)
         else:
             raise ValueError("Format non supporté (CSV ou Parquet requis).")
 
@@ -205,9 +205,11 @@ with tab_eda:
                 x=var_to_plot,
                 nbins=35,
                 marginal="box",
-                color=target_name
-                if target_name and df_raw[target_name].nunique() <= 10
-                else None,
+                color=(
+                    target_name
+                    if target_name and df_raw[target_name].nunique() <= 10
+                    else None
+                ),
                 color_discrete_sequence=px.colors.qualitative.Prism,
             )
             st.plotly_chart(fig_dist, use_container_width=True)
