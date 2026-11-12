@@ -65,7 +65,7 @@ class StreamlitEpochCallback(keras.callbacks.Callback):
                     x=df_hist["epoch"],
                     y=df_hist["loss"],
                     name="Train Loss",
-                    line=dict(color="#439cc8"),
+                    line={"color": "#439cc8"},
                 )
             )
             fig.add_trace(
@@ -73,7 +73,7 @@ class StreamlitEpochCallback(keras.callbacks.Callback):
                     x=df_hist["epoch"],
                     y=df_hist["val_loss"],
                     name="Val Loss",
-                    line=dict(color="#f08a5d", dash="dash"),
+                    line={"color": "#f08a5d", "dash": "dash"},
                 )
             )
             fig.add_trace(
@@ -82,7 +82,7 @@ class StreamlitEpochCallback(keras.callbacks.Callback):
                     y=df_hist["accuracy"],
                     name="Train Accuracy",
                     yaxis="y2",
-                    line=dict(color="#2ca02c"),
+                    line={"color": "#2ca02c"},
                 )
             )
             fig.add_trace(
@@ -91,22 +91,29 @@ class StreamlitEpochCallback(keras.callbacks.Callback):
                     y=df_hist["val_accuracy"],
                     name="Val Accuracy",
                     yaxis="y2",
-                    line=dict(color="#d62728", dash="dash"),
+                    line={"color": "#d62728", "dash": "dash"},
                 )
             )
 
             fig.update_layout(
                 title="Learning Dynamics (Keras)",
-                xaxis=dict(title="Epoch"),
-                yaxis=dict(title="Loss", rangemode="tozero"),
-                yaxis2=dict(
-                    title="Accuracy", overlaying="y", side="right", range=[0.0, 1.0]
-                ),
-                legend=dict(
-                    orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1
-                ),
+                xaxis={"title": "Epoch"},
+                yaxis={"title": "Loss", "rangemode": "tozero"},
+                yaxis2={
+                    "title": "Accuracy",
+                    "overlaying": "y",
+                    "side": "right",
+                    "range": [0.0, 1.0],
+                },
+                legend={
+                    "orientation": "h",
+                    "yanchor": "bottom",
+                    "y": 1.02,
+                    "xanchor": "right",
+                    "x": 1,
+                },
                 height=400,
-                margin=dict(l=20, r=20, t=50, b=20),
+                margin={"l": 20, "r": 20, "t": 50, "b": 20},
             )
             self.chart_placeholder.plotly_chart(fig, use_container_width=True)
 

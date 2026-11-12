@@ -8,7 +8,6 @@ Classes :
     - NumpyMLP : Sequential multi-class Multi-Layer Perceptron model.
 """
 
-
 import numpy as np
 
 
@@ -21,7 +20,7 @@ class DenseLayer:
         Args:
             n_in: Number of input features.
             n_out: Number of output neurons.
-            activation: Activation function ('relu', 'sigmoid', 'tanh', 'softmax').
+            activation: Activation function ('relu', 'sigmoid', 'tanh', 'elu', 'softmax').
         """
         self.activation: str = activation
         limit: float = (
@@ -56,6 +55,10 @@ class DenseLayer:
         elif self.activation == "softmax":
             exp_shifted = np.exp(self.z - np.max(self.z, axis=1, keepdims=True))
             self.output = exp_shifted / np.sum(exp_shifted, axis=1, keepdims=True)
+        elif self.activation == "leakyrelu":
+            self.output = np.maximum(0.01 * self.z, self.z)
+        elif self.activation == "elu":
+            self.output = np.where(self.z > 0, self.z, np.exp(self.z) - 1)
         else:
             self.output = self.z
         return self.output
@@ -75,6 +78,8 @@ class DenseLayer:
             dz = dvalues * (self.output * (1.0 - self.output))
         elif self.activation == "tanh":
             dz = dvalues * (1.0 - self.output**2)
+        elif self.activation == "elu":
+            dz = dvalues * np.where(self.z > 0, 1.0, np.exp(self.z))
         elif self.activation == "softmax":
             dz = dvalues
         else:

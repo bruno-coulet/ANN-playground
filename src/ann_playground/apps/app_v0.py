@@ -4,7 +4,6 @@ Description : Streamlit modular and rusable  Interface
               EDA, cleaning, feature selection
 """
 
-
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -47,9 +46,7 @@ def detect_types(df: pd.DataFrame) -> tuple[list[str], list[str], list[str]]:
         include=["object", "string", "category"]
     ).columns.tolist()
     bin_cols = [
-        col
-        for col in df.columns
-        if set(df[col].dropna().unique()).issubset({0, 1})
+        col for col in df.columns if set(df[col].dropna().unique()).issubset({0, 1})
     ]
     return num_cols, cat_cols, bin_cols
 

@@ -8,7 +8,6 @@ Usage :
     uv run streamlit run src/ann_playground/apps/app.py
 """
 
-
 import numpy as np
 import pandas as pd
 import plotly.express as px
@@ -73,13 +72,15 @@ with st.sidebar:
     hidden_units: list[int] = []
     cols = st.columns(n_layers)
     for i in range(n_layers):
-        default_val = max(64 // 2 ** i, 8)
+        default_val = max(64 // 2**i, 8)
         units = cols[i].number_input(
             f"L{i + 1}", min_value=4, max_value=256, value=default_val, step=4
         )
         hidden_units.append(int(units))
 
-    activation_fn = st.selectbox("Fonction d'activation", ["relu", "tanh", "sigmoid"])
+    activation_fn = st.selectbox(
+        "Fonction d'activation", ["relu", "tanh", "sigmoid", "elu"]
+    )
     learning_rate = st.select_slider(
         "Taux d'apprentissage (lr)",
         options=[0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1],

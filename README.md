@@ -100,7 +100,7 @@ The experiment relies on the [Predict Students' Dropout and Academic Success](ht
 ## Architecture & Modeling
 
 ### 1. Keras Sequential MLP
-* Dynamic network assembly supporting configurable hidden layers, unit densities, and non-linear activations (`relu`, `tanh`, `sigmoid`).
+* Dynamic network assembly supporting configurable hidden layers, unit densities, and non-linear activations (`relu`, `tanh`, `sigmoid`, `elu`).
 * Multi-class classification head (`Dense(3, activation='softmax')`) paired with `sparse_categorical_crossentropy` loss.
 * Regularization controls including variable `Dropout` rates (0.0 to 0.5) and `BatchNormalization`.
 * Real-time training stream integrated into Streamlit via custom Keras callbacks (`StreamlitEpochCallback`).
