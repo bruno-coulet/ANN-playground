@@ -25,6 +25,9 @@ mkdir -p data/raw_data data/clean_data data/processed_data
 mkdir mlartifacts
 ```
 
+Télécharger le data set https://archive.ics.uci.edu/dataset/697/predict+students+dropout+and+academic+success
+et enregistrer le dans `data/raw_data`
+
 ## 3. Fichiers de configuration
 
 - `.streamlit/secrets.toml`
