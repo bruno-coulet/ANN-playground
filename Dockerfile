@@ -6,7 +6,7 @@
 # ------------------------------------------------------------------------------
 # Stage 1: Dependency Builder
 # ------------------------------------------------------------------------------
-FROM python:3.13-slim AS builder
+FROM python:3.12-slim AS builder
 
 # Install uv from official binary image
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
@@ -25,7 +25,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # ------------------------------------------------------------------------------
 # Stage 2: Runtime Environment
 # ------------------------------------------------------------------------------
-FROM python:3.13-slim AS runtime
+FROM python:3.12-slim AS runtime
 
 WORKDIR /app
 

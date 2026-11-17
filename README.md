@@ -5,17 +5,17 @@ Guide d'installation et de préparation de l'environnement (branche `v4.app.val`
 ## Prérequis
 
 - Git
-- Un accès au dépôt `https://github.com/xxx/ann-playground.git`
+- Un accès au dépôt `https://github.com/bruno-coulet/ANN-playground.git`
 - Le fichier de données `data.csv`
 
 ## 1. Récupération du projet
 
 ```bash
-git clone https://github.com/xxx/ann-playground.git ann-playground-v2
-cd ann-playground-v2
+git clone https://github.com/bruno-coulet/ANN-playground.git ann-playground-v1
+cd ann-playground-v1
 
 git fetch --all
-git switch v4.app.val
+git switch main
 ```
 
 ## 2. Création de l'arborescence
@@ -27,7 +27,12 @@ mkdir mlartifacts
 
 ## 3. Fichiers de configuration
 
-Trois fichiers sont à créer à partir des modèles fournis. Remplacez chaque `xxx` par une valeur adaptée à votre environnement et ne commitez jamais ces fichiers.
+- `.streamlit/secrets.toml`
+- `mlflow-data/basic_auth.ini`
+- `.env`
+
+Trois fichiers sont à créer à partir des modèles `.example` fournis.<br>
+Remplacez chaque `xxx` par une valeur adaptée à votre environnement et ne commitez jamais ces fichiers.
 
 ### 3.1 Streamlit : `.streamlit/secrets.toml`
 
@@ -64,14 +69,14 @@ cp -p .env.example .env
 # ==========================================
 # Docker & Image Configuration
 # ==========================================
-APP_VERSION=v4.0.0
+APP_VERSION=v1.0.0
 
 # ==========================================
 # Network & Port Configuration
 # ==========================================
-STREAMLIT_PORT=8511
-MLFLOW_PORT=5010
-API_PORT=8010
+STREAMLIT_PORT=8501
+MLFLOW_PORT=5000
+API_PORT=8000
 
 # ==========================================
 # MLflow Authentication & Security
